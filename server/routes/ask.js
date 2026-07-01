@@ -1,12 +1,19 @@
 const express = require("express");
 const router = express.Router();
 
-const openai =
-  require("../clients/openai");
+const openai = require("../clients/openai");
 
 const {
   searchKnowledge
 } = require("../services/retrievalService");
+
+const {
+  buildEvidenceSet
+} = require("../services/evidenceService");
+
+const {
+  buildPrompt
+} = require("../prompts/promptAssembler");
 
 router.get("/", async (req, res) => {
   try {
@@ -19,38 +26,19 @@ router.get("/", async (req, res) => {
       });
     }
 
-    const matches =
-      await searchKnowledge(question);
+    const matches = await searchKnowledge(question);
 
-    const context = matches
-      .map(
-        match =>
-          `${match.title}\n${match.chunk_text}`
-      )
-      .join("\n\n");
+    const evidence = buildEvidenceSet(question, matches);
+
+    const messages = buildPrompt(
+      evidence.context,
+      question
+    );
 
     const completion =
       await openai.chat.completions.create({
         model: "gpt-4.1-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Answer ONLY using the supplied context. If the answer is not in the context, say you do not know."
-          },
-          {
-            role: "user",
-            content: `
-Context:
-
-${context}
-
-Question:
-
-${question}
-`
-          }
-        ]
+        messages
       });
 
     const answer =
@@ -60,11 +48,7 @@ ${question}
       success: true,
       question,
       answer,
-      sources: matches.map(match => ({
-        id: match.id,
-        title: match.title,
-        similarity: match.similarity
-      }))
+      evidence
     });
 
   } catch (error) {
