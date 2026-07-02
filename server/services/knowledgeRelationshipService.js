@@ -7,107 +7,137 @@
  * NOTE:
  * Relationships are currently hardcoded while the Knowledge Explorer is
  * developed. Later versions will infer relationships from metadata,
- * references, and governance information stored in Supabase.
+ * semantic similarity, citations, and governance information stored in
+ * Supabase.
  ******************************************************************************/
 
 const relationships = {
-  "Client Onboarding Standard Operating Procedure.pdf - Part 1": [
-    "Business Tax Intake Guide.pdf - Part 1",
-    "Individual Tax Preparation Guide.pdf - Part 1",
-    "Tax Return Review Procedure.pdf - Part 1",
-    "Client Document Retention Policy.pdf - Part 1"
+
+  /**************************************************************************
+   * Tax Operations
+   **************************************************************************/
+
+  "Client Onboarding Standard Operating Procedure.pdf": [
+    "Business Tax Intake Guide.pdf",
+    "Individual Tax Preparation Guide.pdf",
+    "Tax Return Review Procedure.pdf",
+    "Client Document Retention Policy.pdf"
   ],
 
-  "Business Tax Intake Guide.pdf - Part 1": [
-    "Client Onboarding Standard Operating Procedure.pdf - Part 1",
-    "Tax Return Review Procedure.pdf - Part 1",
-    "Estimated Tax Payment Guide.pdf - Part 1"
+  "Business Tax Intake Guide.pdf": [
+    "Client Onboarding Standard Operating Procedure.pdf",
+    "Tax Return Review Procedure.pdf",
+    "Estimated Tax Payment Guide.pdf"
   ],
 
-  "Individual Tax Preparation Guide.pdf - Part 1": [
-    "Client Onboarding Standard Operating Procedure.pdf - Part 1",
-    "Tax Return Review Procedure.pdf - Part 1"
+  "Individual Tax Preparation Guide.pdf": [
+    "Client Onboarding Standard Operating Procedure.pdf",
+    "Tax Return Review Procedure.pdf"
   ],
 
-  "Tax Return Review Procedure.pdf - Part 1": [
-    "Business Tax Intake Guide.pdf - Part 1",
-    "Individual Tax Preparation Guide.pdf - Part 1",
-    "Client Document Retention Policy.pdf - Part 1"
+  "Tax Return Review Procedure.pdf": [
+    "Business Tax Intake Guide.pdf",
+    "Individual Tax Preparation Guide.pdf",
+    "Client Document Retention Policy.pdf"
   ],
 
-  "Employee Expense Reimbursement Policy.pdf - Part 1": [
+  "Client Document Retention Policy.pdf": [
+    "Client Onboarding Standard Operating Procedure.pdf",
+    "Tax Return Review Procedure.pdf"
+  ],
+
+  "Estimated Tax Payment Guide.pdf": [
+    "Business Tax Intake Guide.pdf"
+  ],
+
+  "Tax_Firm_AI_Brain_Test.pdf": [
+    "Client Onboarding Standard Operating Procedure.pdf",
+    "Business Tax Intake Guide.pdf",
+    "Tax Return Review Procedure.pdf"
+  ],
+
+  /**************************************************************************
+   * Finance
+   **************************************************************************/
+
+  "Employee Expense Reimbursement Policy.pdf": [
     "Travel Policy",
-    "Expense Report Policy.pdf - Part 1"
+    "Expense Report Policy.pdf"
   ],
 
-  "Travel Policy": [
-    "Employee Expense Reimbursement Policy.pdf - Part 1",
-    "Expense Report Policy.pdf - Part 1"
-  ],
-
-  "Expense Report Policy.pdf - Part 1": [
-    "Employee Expense Reimbursement Policy.pdf - Part 1",
+  "Expense Report Policy.pdf": [
+    "Employee Expense Reimbursement Policy.pdf",
     "Travel Policy"
   ],
 
-  "Vacation and Leave Policy.pdf - Part 1": [
+  "Travel Policy": [
+    "Employee Expense Reimbursement Policy.pdf",
+    "Expense Report Policy.pdf"
+  ],
+
+  /**************************************************************************
+   * Human Resources
+   **************************************************************************/
+
+  "Vacation and Leave Policy.pdf": [
     "Remote Work Policy"
   ],
 
   "Remote Work Policy": [
-    "Vacation and Leave Policy.pdf - Part 1"
+    "Vacation and Leave Policy.pdf"
   ],
 
-  "Knowledge Management Policy.pdf - Part 1": [
-    "Meeting Management Policy.pdf - Part 1"
+  /**************************************************************************
+   * Knowledge Management
+   **************************************************************************/
+
+  "Knowledge Management Policy.pdf": [
+    "Meeting Management Policy.pdf"
   ],
 
-  "Meeting Management Policy.pdf - Part 1": [
-    "Knowledge Management Policy.pdf - Part 1"
+  "Meeting Management Policy.pdf": [
+    "Knowledge Management Policy.pdf"
   ],
 
-  "Contractor Selection Policy.pdf - Part 1": [
-    "Bathroom Renovation Procedure.pdf - Part 1",
-    "Flooring Installation Guide.pdf - Part 1",
-    "Driveway Resurfacing SOP.pdf - Part 1",
-    "Pool Fence Compliance Guide.pdf - Part 1"
+  /**************************************************************************
+   * Facilities
+   **************************************************************************/
+
+  "Contractor Selection Policy.pdf": [
+    "Bathroom Renovation Procedure.pdf",
+    "Flooring Installation Guide.pdf",
+    "Driveway Resurfacing SOP.pdf",
+    "Pool Fence Compliance Guide.pdf"
   ],
 
-  "Bathroom Renovation Procedure.pdf - Part 1": [
-    "Contractor Selection Policy.pdf - Part 1",
-    "Flooring Installation Guide.pdf - Part 1"
+  "Bathroom Renovation Procedure.pdf": [
+    "Contractor Selection Policy.pdf",
+    "Flooring Installation Guide.pdf"
   ],
 
-  "Flooring Installation Guide.pdf - Part 1": [
-    "Bathroom Renovation Procedure.pdf - Part 1",
-    "Contractor Selection Policy.pdf - Part 1"
+  "Flooring Installation Guide.pdf": [
+    "Bathroom Renovation Procedure.pdf",
+    "Contractor Selection Policy.pdf"
   ],
 
-  "Driveway Resurfacing SOP.pdf - Part 1": [
-    "Contractor Selection Policy.pdf - Part 1"
+  "Driveway Resurfacing SOP.pdf": [
+    "Contractor Selection Policy.pdf"
   ],
 
-  "Pool Fence Compliance Guide.pdf - Part 1": [
-    "Contractor Selection Policy.pdf - Part 1"
+  "Pool Fence Compliance Guide.pdf": [
+    "Contractor Selection Policy.pdf"
   ],
 
-  "Tax_Firm_AI_Brain_Test.pdf - Part 1": [
-    "Client Onboarding Standard Operating Procedure.pdf - Part 1",
-    "Business Tax Intake Guide.pdf - Part 1",
-    "Tax Return Review Procedure.pdf - Part 1"
-  ],
+  /**************************************************************************
+   * Procurement
+   **************************************************************************/
 
-  "Tax_Firm_AI_Brain_Test.pdf - Part 2": [
-    "Client Onboarding Standard Operating Procedure.pdf - Part 1",
-    "Business Tax Intake Guide.pdf - Part 1",
-    "Tax Return Review Procedure.pdf - Part 1"
-  ],
-
-  "Tax_Firm_AI_Brain_Test.pdf - Part 3": [
-    "Client Onboarding Standard Operating Procedure.pdf - Part 1",
-    "Business Tax Intake Guide.pdf - Part 1",
-    "Tax Return Review Procedure.pdf - Part 1"
+  "Vendor Approval Policy.pdf": [
+    "Employee Expense Reimbursement Policy.pdf",
+    "Travel Policy",
+    "Contractor Selection Policy.pdf"
   ]
+
 };
 
 /******************************************************************************

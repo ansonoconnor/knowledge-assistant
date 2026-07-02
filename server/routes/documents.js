@@ -4,19 +4,38 @@
  * Responsibility:
  * Returns the organization's indexed document catalog with extracted metadata,
  * document sections, and relationship data for browsing and inspection.
+ *
+ * Notes:
+ * Chunks belonging to the same source PDF are grouped into a single logical
+ * enterprise document by removing the " - Part X" suffix generated during
+ * indexing.
  ******************************************************************************/
 
 const express = require("express");
 const supabase = require("../clients/supabase");
+
 const {
   extractDocumentMetadata,
   extractDocumentSections
 } = require("../services/documentMetadataService");
+
 const {
   getRelatedDocuments
 } = require("../services/knowledgeRelationshipService");
 
 const router = express.Router();
+
+/******************************************************************************
+ * Helpers
+ ******************************************************************************/
+
+function normalizeDocumentTitle(title = "") {
+  return title.replace(/\s+-\s+Part\s+\d+$/i, "").trim();
+}
+
+/******************************************************************************
+ * Routes
+ ******************************************************************************/
 
 router.get("/", async (req, res) => {
   try {
@@ -33,17 +52,22 @@ router.get("/", async (req, res) => {
     const groupedDocuments = {};
 
     data.forEach((row) => {
-      if (!groupedDocuments[row.title]) {
-        groupedDocuments[row.title] = {
-          title: row.title,
+
+      const documentTitle = normalizeDocumentTitle(row.title);
+
+      if (!groupedDocuments[documentTitle]) {
+        groupedDocuments[documentTitle] = {
+          title: documentTitle,
           chunks: []
         };
       }
 
-      groupedDocuments[row.title].chunks.push(row);
+      groupedDocuments[documentTitle].chunks.push(row);
+
     });
 
     const documents = Object.values(groupedDocuments).map((document) => {
+
       const combinedText = document.chunks
         .map((chunk) => chunk.chunk_text || "")
         .join("\n\n");
@@ -56,6 +80,7 @@ router.get("/", async (req, res) => {
 
       return {
         title: document.title,
+
         chunks: document.chunks.length,
 
         department: metadata.department,
@@ -64,25 +89,35 @@ router.get("/", async (req, res) => {
         revision: metadata.revision,
         effectiveDate: metadata.effectiveDate,
         purpose: metadata.purpose,
+
         relatedPolicies: metadata.relatedPolicies,
         sectionHeadings: metadata.sectionHeadings,
+
         sections: extractDocumentSections(document.chunks),
 
         relatedDocuments: getRelatedDocuments(document.title)
       };
+
     });
+
+    documents.sort((a, b) =>
+      a.title.localeCompare(b.title)
+    );
 
     res.json({
       success: true,
       documents
     });
+
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       success: false,
       error: error.message
     });
+
   }
 });
 
