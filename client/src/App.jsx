@@ -9,8 +9,12 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
+import UploadPanel from "./components/UploadPanel";
 import KnowledgeLibrary from "./components/KnowledgeLibrary";
 import DocumentInspector from "./components/DocumentInspector";
+import QuestionPanel from "./components/QuestionPanel";
+import AnswerPanel from "./components/AnswerPanel";
+import EvidencePanel from "./components/EvidencePanel";
 
 function App() {
   const [question, setQuestion] = useState("");
@@ -19,6 +23,7 @@ function App() {
 
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
+  const [libraryCollapsed, setLibraryCollapsed] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
@@ -106,9 +111,6 @@ function App() {
     }
   }
 
-  const evidenceDocuments = evidence?.documents || [];
-  const evidenceSummary = evidence?.summary || null;
-
   return (
     <div className="app-shell">
       <header className="hero">
@@ -125,250 +127,55 @@ function App() {
       </header>
 
       <main className="workspace">
-
-        {/* ==========================================================
-            Upload
-        ========================================================== */}
-
-        <section className="card">
-
-          <div className="card-header">
-            <div>
-              <h2>Upload PDF</h2>
-              <p>
-                Index internal documentation for semantic retrieval.
-              </p>
-            </div>
-          </div>
-
-          <div className="upload-row">
-
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) => setPdfFile(e.target.files[0])}
-            />
-
-            <button
-              onClick={uploadPdf}
-              disabled={!pdfFile}
-            >
-              Upload PDF
-            </button>
-
-          </div>
-
-          {uploadMessage && (
-            <div className="status-message">
-              {uploadMessage}
-            </div>
-          )}
-
-        </section>
-
-        {/* ==========================================================
-            Knowledge Library
-        ========================================================== */}
-
-        <KnowledgeLibrary
-          documents={documents}
-          selectedDocument={selectedDocument}
-          onSelectDocument={selectDocument}
+        <UploadPanel
+          pdfFile={pdfFile}
+          setPdfFile={setPdfFile}
+          uploadPdf={uploadPdf}
+          uploadMessage={uploadMessage}
         />
 
-        {/* ==========================================================
-            Document Inspector
-        ========================================================== */}
-
-        <DocumentInspector
-          document={selectedDocument}
-          documents={documents}
-          onSelectDocument={selectDocument}
-        />
-
-        {/* ==========================================================
-            Ask
-        ========================================================== */}
-
-        <section className="card">
-
-          <div className="card-header">
-            <div>
-              <h2>Ask a Question</h2>
-              <p>
-                Query the indexed knowledge base for a grounded response.
-              </p>
-            </div>
-          </div>
-
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Ask a question about your uploaded documentation..."
+        <div
+          className={`workspace-grid ${
+            libraryCollapsed ? "library-is-collapsed" : ""
+          }`}
+        >
+          <KnowledgeLibrary
+            documents={documents}
+            selectedDocument={selectedDocument}
+            onSelectDocument={selectDocument}
+            collapsed={libraryCollapsed}
+            onToggleCollapsed={() =>
+              setLibraryCollapsed((current) => !current)
+            }
           />
 
-          <button
-            onClick={askQuestion}
-            disabled={loading || !question.trim()}
-          >
-            {loading
-              ? "Searching organizational knowledge..."
-              : "Generate Answer"}
-          </button>
+          <div className="workspace-primary">
+            <DocumentInspector
+              document={selectedDocument}
+              documents={documents}
+              onSelectDocument={selectDocument}
+            />
 
-        </section>
+            <QuestionPanel
+              question={question}
+              setQuestion={setQuestion}
+              askQuestion={askQuestion}
+              loading={loading}
+            />
 
-        {/* ==========================================================
-            Answer
-        ========================================================== */}
-
-        <section className="card">
-
-          <div className="card-header">
-            <div>
-              <h2>Answer</h2>
-              <p>
-                Grounded response generated from retrieved documentation.
-              </p>
-            </div>
+            <AnswerPanel
+              answer={answer}
+            />
           </div>
 
-          <div className={answer ? "answer" : "empty-state"}>
-            {answer ||
-              "Ask a question about your organization's documentation. Grounded responses will appear here."}
+          <div className="workspace-secondary">
+            <EvidencePanel
+              evidence={evidence}
+              documents={documents}
+              onSelectDocument={selectDocument}
+            />
           </div>
-
-        </section>
-
-        {/* ==========================================================
-            Evidence
-        ========================================================== */}
-
-        <section className="card evidence-section">
-
-          <div className="card-header">
-            <div>
-              <h2>Evidence</h2>
-              <p>
-                Supporting documents and excerpts used to construct the answer.
-              </p>
-            </div>
-          </div>
-
-          {!evidence && (
-            <div className="empty-state">
-              Supporting evidence will appear after a question is answered.
-            </div>
-          )}
-
-          {evidence && evidenceDocuments.length === 0 && (
-            <div className="empty-state">
-              No supporting documentation was retrieved.
-            </div>
-          )}
-
-          {evidenceSummary && evidenceDocuments.length > 0 && (
-
-            <div className="metrics-grid">
-
-              <div className="metric-card">
-                <span>Documents</span>
-                <strong>{evidenceSummary.uniqueDocuments}</strong>
-              </div>
-
-              <div className="metric-card">
-                <span>Supporting Sections</span>
-                <strong>{evidenceSummary.supportingSections}</strong>
-              </div>
-
-              <div className="metric-card">
-                <span>Retrieved Chunks</span>
-                <strong>{evidenceSummary.retrievedChunks}</strong>
-              </div>
-
-            </div>
-
-          )}
-
-          <div className="evidence-list">
-
-            {evidenceDocuments.map((doc) => (
-
-              <article
-                key={doc.title}
-                className="evidence-card"
-              >
-
-                <div className="evidence-card-header">
-
-                  <div>
-
-                    <div className="document-label">
-                      Source Document
-                    </div>
-
-                    <h3>📄 {doc.title}</h3>
-
-                  </div>
-
-                  <div className="relevance-badge">
-                    <span>Relevance</span>
-                    <strong>
-                      {doc.highestSimilarity?.toFixed(3)}
-                    </strong>
-                  </div>
-
-                </div>
-
-                <div className="evidence-meta">
-
-                  <div>
-                    <span>Supporting Sections</span>
-                    <strong>{doc.supportingSections}</strong>
-                  </div>
-
-                </div>
-
-                <div className="excerpt-group">
-
-                  <h4>Supporting Evidence</h4>
-
-                  {doc.excerpts.map((excerpt, index) => (
-
-                    <div
-                      key={index}
-                      className="excerpt-card"
-                    >
-
-                      <div className="excerpt-label">
-                        Supporting Excerpt
-                      </div>
-
-                      <p>
-                        {excerpt.text.length > 300
-                          ? excerpt.text.substring(0, 300) + "..."
-                          : excerpt.text}
-                      </p>
-
-                      <div className="excerpt-footer">
-                        Section Similarity:{" "}
-                        {excerpt.similarity?.toFixed(3)}
-                      </div>
-
-                    </div>
-
-                  ))}
-
-                </div>
-
-              </article>
-
-            ))}
-
-          </div>
-
-        </section>
-
+        </div>
       </main>
     </div>
   );

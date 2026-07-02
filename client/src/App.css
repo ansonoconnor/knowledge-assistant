@@ -40,7 +40,7 @@ input {
 }
 
 .app-shell {
-  max-width: 1100px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 44px 24px 64px;
 }
@@ -78,6 +78,25 @@ h1 {
 .workspace {
   display: grid;
   gap: 28px;
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(420px, 1fr) minmax(320px, 420px);
+  gap: 24px;
+  align-items: start;
+  transition: grid-template-columns 0.25s ease;
+}
+
+.workspace-grid.library-is-collapsed {
+  grid-template-columns: 56px minmax(520px, 1fr) minmax(320px, 440px);
+}
+
+.workspace-primary,
+.workspace-secondary {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
 }
 
 .card {
@@ -187,6 +206,8 @@ button:disabled {
   gap: 18px;
   padding: 18px 0;
   border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: 0.15s ease;
 }
 
 .library-item:last-child {
@@ -198,6 +219,17 @@ button:disabled {
   padding-top: 0;
 }
 
+.library-item:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.library-item.selected {
+  border: 1px solid var(--accent);
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: 12px;
+  padding: 18px;
+}
+
 .library-item strong {
   display: block;
   color: #ffffff;
@@ -206,8 +238,10 @@ button:disabled {
 }
 
 .library-item span {
+  display: block;
   color: var(--text-muted);
   font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 textarea {
@@ -255,10 +289,14 @@ textarea:focus {
   padding: 18px;
 }
 
+/******************************************************************************
+Evidence Metrics
+******************************************************************************/
+
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 16px;
   margin-bottom: 28px;
 }
 
@@ -266,26 +304,49 @@ textarea:focus {
   background: var(--panel-deep);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 22px;
+
+  min-height: 132px;
+
+  padding: 18px 16px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
   text-align: center;
 }
 
 .metric-card span {
   display: block;
+
   color: var(--text-muted);
-  font-size: 0.82rem;
-  font-weight: 700;
+
+  font-size: 0.74rem;
+
+  font-weight: 800;
+
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 10px;
+
+  letter-spacing: 0.09em;
+
+  line-height: 1.45;
+
+  margin: 0 0 14px;
 }
 
 .metric-card strong {
   display: block;
+
   color: #ffffff;
-  font-size: 2.15rem;
+
+  font-size: 3rem;
+
+  font-weight: 800;
+
   line-height: 1;
-  letter-spacing: -0.04em;
+
+  letter-spacing: -0.05em;
 }
 
 .evidence-list {
@@ -413,6 +474,158 @@ textarea:focus {
   color: #ef4444;
 }
 
+.section-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.section-toggle:hover {
+  background: transparent;
+  transform: none;
+}
+
+.section-toggle span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+/******************************************************************************
+Knowledge Library
+******************************************************************************/
+
+.knowledge-library {
+  position: sticky;
+  top: 24px;
+  min-height: 420px;
+  overflow: hidden;
+  transition:
+    padding 0.25s ease,
+    min-height 0.25s ease;
+}
+
+.knowledge-library.collapsed {
+  padding: 18px 10px;
+  min-height: 420px;
+}
+
+.library-collapse-button {
+  position: absolute;
+  top: 16px;
+  right: 14px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--panel-deep);
+  color: #bfdbfe;
+  border: 1px solid var(--border-strong);
+  display: grid;
+  place-items: center;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.library-collapse-button:hover {
+  background: var(--accent);
+}
+
+.collapsed-library-label {
+  height: 100%;
+  min-height: 360px;
+  display: grid;
+  place-items: center;
+}
+
+.collapsed-library-label span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.library-search {
+  width: 100%;
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  background: var(--panel-deep);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.library-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/******************************************************************************
+Department Groups
+******************************************************************************/
+
+.department-group {
+  margin-top: 28px;
+}
+
+.department-group:first-of-type {
+  margin-top: 0;
+}
+
+.department-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.department-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-soft);
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 1180px) {
+  .workspace-grid,
+  .workspace-grid.library-is-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .knowledge-library {
+    position: relative;
+    top: auto;
+  }
+
+  .knowledge-library.collapsed {
+    min-height: auto;
+  }
+
+  .collapsed-library-label {
+    min-height: auto;
+    padding: 26px 0;
+  }
+
+  .collapsed-library-label span {
+    writing-mode: initial;
+    transform: none;
+  }
+}
+
 @media (max-width: 760px) {
   .app-shell {
     padding: 28px 16px 44px;
@@ -445,90 +658,31 @@ textarea:focus {
   button {
     width: 100%;
   }
+
+  .library-collapse-button {
+    width: 36px;
+    height: 36px;
+  }
 }
 
-.section-toggle {
-  width: 100%;
+.document-link {
   background: transparent;
   border: none;
-  color: inherit;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
   padding: 0;
-  margin-bottom: 12px;
+
+  color: #ffffff;
+
+  font-weight: 700;
+
+  font-size: 1rem;
+
   text-align: left;
+
+  cursor: pointer;
 }
 
-.section-toggle:hover {
+.document-link:hover {
   background: transparent;
   transform: none;
-}
-
-.section-toggle span {
-  color: var(--text-muted);
-  font-size: 0.82rem;
-}
-
-/******************************************************************************
-Knowledge Library Search
-******************************************************************************/
-
-.library-search {
-  width: 100%;
-  margin-bottom: 22px;
-  padding: 14px 16px;
-  background: var(--panel-deep);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  font-size: 0.95rem;
-}
-
-.library-search:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.library-item.selected {
-  border: 1px solid var(--accent);
-  background: rgba(37, 99, 235, 0.08);
-}
-
-.library-item {
-  cursor: pointer;
-  transition: 0.15s ease;
-}
-
-.library-item:hover {
-  background: rgba(255,255,255,0.03);
-}
-
-/******************************************************************************
-Department Groups
-******************************************************************************/
-
-.department-group {
-  margin-top: 28px;
-}
-
-.department-group:first-of-type {
-  margin-top: 0;
-}
-
-.department-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.department-header h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--text-soft);
-  letter-spacing: -0.02em;
+  color: #93c5fd;
 }

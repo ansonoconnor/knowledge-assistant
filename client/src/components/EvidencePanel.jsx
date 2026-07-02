@@ -6,6 +6,13 @@
  * users to navigate directly into the Document Inspector.
  ******************************************************************************/
 
+function displayDocumentTitle(title = "") {
+  return title
+    .replace(/\s-\sPart\s\d+$/i, "")
+    .replace(/\.pdf$/i, "")
+    .replace(/_/g, " ");
+}
+
 function EvidencePanel({
   evidence,
   documents = [],
@@ -15,9 +22,7 @@ function EvidencePanel({
   const evidenceSummary = evidence?.summary || null;
 
   function openDocument(title) {
-    const document = documents.find(
-      (doc) => doc.title === title
-    );
+    const document = documents.find((doc) => doc.title === title);
 
     if (document && onSelectDocument) {
       onSelectDocument(document);
@@ -26,7 +31,6 @@ function EvidencePanel({
 
   return (
     <section className="card evidence-section">
-
       <div className="card-header">
         <div>
           <h2>Evidence</h2>
@@ -49,9 +53,7 @@ function EvidencePanel({
       )}
 
       {evidenceSummary && evidenceDocuments.length > 0 && (
-
         <div className="metrics-grid">
-
           <div className="metric-card">
             <span>Documents</span>
             <strong>{evidenceSummary.uniqueDocuments}</strong>
@@ -66,24 +68,14 @@ function EvidencePanel({
             <span>Retrieved Chunks</span>
             <strong>{evidenceSummary.retrievedChunks}</strong>
           </div>
-
         </div>
-
       )}
 
       <div className="evidence-list">
-
         {evidenceDocuments.map((doc) => (
-
-          <article
-            key={doc.title}
-            className="evidence-card"
-          >
-
+          <article key={doc.title} className="evidence-card">
             <div className="evidence-card-header">
-
               <div>
-
                 <div className="document-label">
                   Source Document
                 </div>
@@ -93,9 +85,8 @@ function EvidencePanel({
                   className="document-link"
                   onClick={() => openDocument(doc.title)}
                 >
-                  📄 {doc.title}
+                  📄 {displayDocumentTitle(doc.title)}
                 </button>
-
               </div>
 
               <div className="relevance-badge">
@@ -104,29 +95,20 @@ function EvidencePanel({
                   {doc.highestSimilarity?.toFixed(3)}
                 </strong>
               </div>
-
             </div>
 
             <div className="evidence-meta">
-
               <div>
                 <span>Supporting Sections</span>
                 <strong>{doc.supportingSections}</strong>
               </div>
-
             </div>
 
             <div className="excerpt-group">
-
               <h4>Supporting Evidence</h4>
 
               {doc.excerpts.map((excerpt, index) => (
-
-                <div
-                  key={index}
-                  className="excerpt-card"
-                >
-
+                <div key={index} className="excerpt-card">
                   <div className="excerpt-label">
                     Supporting Excerpt
                   </div>
@@ -141,19 +123,12 @@ function EvidencePanel({
                     Section Similarity:{" "}
                     {excerpt.similarity?.toFixed(3)}
                   </div>
-
                 </div>
-
               ))}
-
             </div>
-
           </article>
-
         ))}
-
       </div>
-
     </section>
   );
 }
