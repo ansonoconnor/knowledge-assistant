@@ -1,11 +1,25 @@
+/******************************************************************************
+ * File: App.jsx
+ * Layer: Application
+ * Responsibility:
+ * Coordinates the Knowledge Assistant workspace by orchestrating document
+ * upload, retrieval, evidence presentation, and document inspection.
+ ******************************************************************************/
+
 import { useState, useEffect } from "react";
 import "./App.css";
+
+import KnowledgeLibrary from "./components/KnowledgeLibrary";
+import DocumentInspector from "./components/DocumentInspector";
 
 function App() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [evidence, setEvidence] = useState(null);
+
   const [documents, setDocuments] = useState([]);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
   const [uploadMessage, setUploadMessage] = useState("");
@@ -23,10 +37,18 @@ function App() {
 
       if (data.success) {
         setDocuments(data.documents);
+
+        if (!selectedDocument && data.documents.length > 0) {
+          setSelectedDocument(data.documents[0]);
+        }
       }
     } catch (error) {
       console.error(error);
     }
+  }
+
+  function selectDocument(document) {
+    setSelectedDocument(document);
   }
 
   async function askQuestion() {
@@ -90,8 +112,12 @@ function App() {
   return (
     <div className="app-shell">
       <header className="hero">
-        <div className="eyebrow">Enterprise Knowledge Infrastructure</div>
+        <div className="eyebrow">
+          Enterprise Knowledge Infrastructure
+        </div>
+
         <h1>Knowledge Assistant</h1>
+
         <p>
           Grounded answers backed by retrieved organizational evidence,
           supporting excerpts, and transparent source context.
@@ -99,24 +125,37 @@ function App() {
       </header>
 
       <main className="workspace">
+
+        {/* ==========================================================
+            Upload
+        ========================================================== */}
+
         <section className="card">
+
           <div className="card-header">
             <div>
               <h2>Upload PDF</h2>
-              <p>Index internal documentation for semantic retrieval.</p>
+              <p>
+                Index internal documentation for semantic retrieval.
+              </p>
             </div>
           </div>
 
           <div className="upload-row">
+
             <input
               type="file"
               accept=".pdf"
               onChange={(e) => setPdfFile(e.target.files[0])}
             />
 
-            <button onClick={uploadPdf} disabled={!pdfFile}>
+            <button
+              onClick={uploadPdf}
+              disabled={!pdfFile}
+            >
               Upload PDF
             </button>
+
           </div>
 
           {uploadMessage && (
@@ -124,42 +163,41 @@ function App() {
               {uploadMessage}
             </div>
           )}
+
         </section>
 
-        <section className="card">
-          <div className="card-header">
-            <div>
-              <h2>Knowledge Library</h2>
-              <p>Documents currently available for grounded retrieval.</p>
-            </div>
+        {/* ==========================================================
+            Knowledge Library
+        ========================================================== */}
 
-            <span className="pill">
-              {documents.length} document{documents.length === 1 ? "" : "s"}
-            </span>
-          </div>
+        <KnowledgeLibrary
+          documents={documents}
+          selectedDocument={selectedDocument}
+          onSelectDocument={selectDocument}
+        />
 
-          {documents.length === 0 && (
-            <div className="empty-state">
-              No documents indexed yet. Upload a PDF to begin building the
-              knowledge library.
-            </div>
-          )}
+        {/* ==========================================================
+            Document Inspector
+        ========================================================== */}
 
-          {documents.map((doc, index) => (
-            <div key={index} className="library-item">
-              <div>
-                <strong>{doc.title}</strong>
-                <span>{doc.chunks} indexed section{doc.chunks === 1 ? "" : "s"}</span>
-              </div>
-            </div>
-          ))}
-        </section>
+        <DocumentInspector
+          document={selectedDocument}
+          documents={documents}
+          onSelectDocument={selectDocument}
+        />
+
+        {/* ==========================================================
+            Ask
+        ========================================================== */}
 
         <section className="card">
+
           <div className="card-header">
             <div>
               <h2>Ask a Question</h2>
-              <p>Query the indexed knowledge base for a grounded response.</p>
+              <p>
+                Query the indexed knowledge base for a grounded response.
+              </p>
             </div>
           </div>
 
@@ -169,30 +207,51 @@ function App() {
             placeholder="Ask a question about your uploaded documentation..."
           />
 
-          <button onClick={askQuestion} disabled={loading || !question.trim()}>
-            {loading ? "Searching organizational knowledge..." : "Generate Answer"}
+          <button
+            onClick={askQuestion}
+            disabled={loading || !question.trim()}
+          >
+            {loading
+              ? "Searching organizational knowledge..."
+              : "Generate Answer"}
           </button>
+
         </section>
 
+        {/* ==========================================================
+            Answer
+        ========================================================== */}
+
         <section className="card">
+
           <div className="card-header">
             <div>
               <h2>Answer</h2>
-              <p>Grounded response generated from retrieved documentation.</p>
+              <p>
+                Grounded response generated from retrieved documentation.
+              </p>
             </div>
           </div>
 
           <div className={answer ? "answer" : "empty-state"}>
             {answer ||
-              "Ask a question about your organization’s documentation. Grounded responses will appear here."}
+              "Ask a question about your organization's documentation. Grounded responses will appear here."}
           </div>
+
         </section>
 
+        {/* ==========================================================
+            Evidence
+        ========================================================== */}
+
         <section className="card evidence-section">
+
           <div className="card-header">
             <div>
               <h2>Evidence</h2>
-              <p>Supporting documents and excerpts used to construct the answer.</p>
+              <p>
+                Supporting documents and excerpts used to construct the answer.
+              </p>
             </div>
           </div>
 
@@ -204,12 +263,14 @@ function App() {
 
           {evidence && evidenceDocuments.length === 0 && (
             <div className="empty-state">
-              No supporting documentation was retrieved for this question.
+              No supporting documentation was retrieved.
             </div>
           )}
 
           {evidenceSummary && evidenceDocuments.length > 0 && (
+
             <div className="metrics-grid">
+
               <div className="metric-card">
                 <span>Documents</span>
                 <strong>{evidenceSummary.uniqueDocuments}</strong>
@@ -224,37 +285,64 @@ function App() {
                 <span>Retrieved Chunks</span>
                 <strong>{evidenceSummary.retrievedChunks}</strong>
               </div>
+
             </div>
+
           )}
 
           <div className="evidence-list">
-            {evidenceDocuments.map((doc, index) => (
-              <article key={index} className="evidence-card">
+
+            {evidenceDocuments.map((doc) => (
+
+              <article
+                key={doc.title}
+                className="evidence-card"
+              >
+
                 <div className="evidence-card-header">
+
                   <div>
-                    <div className="document-label">Source Document</div>
+
+                    <div className="document-label">
+                      Source Document
+                    </div>
+
                     <h3>📄 {doc.title}</h3>
+
                   </div>
 
                   <div className="relevance-badge">
                     <span>Relevance</span>
-                    <strong>{doc.highestSimilarity?.toFixed(3)}</strong>
+                    <strong>
+                      {doc.highestSimilarity?.toFixed(3)}
+                    </strong>
                   </div>
+
                 </div>
 
                 <div className="evidence-meta">
+
                   <div>
                     <span>Supporting Sections</span>
                     <strong>{doc.supportingSections}</strong>
                   </div>
+
                 </div>
 
                 <div className="excerpt-group">
+
                   <h4>Supporting Evidence</h4>
 
-                  {doc.excerpts.map((excerpt, excerptIndex) => (
-                    <div key={excerptIndex} className="excerpt-card">
-                      <div className="excerpt-label">Supporting Excerpt</div>
+                  {doc.excerpts.map((excerpt, index) => (
+
+                    <div
+                      key={index}
+                      className="excerpt-card"
+                    >
+
+                      <div className="excerpt-label">
+                        Supporting Excerpt
+                      </div>
 
                       <p>
                         {excerpt.text.length > 300
@@ -263,15 +351,24 @@ function App() {
                       </p>
 
                       <div className="excerpt-footer">
-                        Section Similarity: {excerpt.similarity?.toFixed(3)}
+                        Section Similarity:{" "}
+                        {excerpt.similarity?.toFixed(3)}
                       </div>
+
                     </div>
+
                   ))}
+
                 </div>
+
               </article>
+
             ))}
+
           </div>
+
         </section>
+
       </main>
     </div>
   );

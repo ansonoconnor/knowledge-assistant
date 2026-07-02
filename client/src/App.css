@@ -446,3 +446,89 @@ textarea:focus {
     width: 100%;
   }
 }
+
+.section-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.section-toggle:hover {
+  background: transparent;
+  transform: none;
+}
+
+.section-toggle span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+/******************************************************************************
+Knowledge Library Search
+******************************************************************************/
+
+.library-search {
+  width: 100%;
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  background: var(--panel-deep);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.library-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.library-item.selected {
+  border: 1px solid var(--accent);
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.library-item {
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.library-item:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+/******************************************************************************
+Department Groups
+******************************************************************************/
+
+.department-group {
+  margin-top: 28px;
+}
+
+.department-group:first-of-type {
+  margin-top: 0;
+}
+
+.department-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.department-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-soft);
+  letter-spacing: -0.02em;
+}
