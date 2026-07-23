@@ -1,179 +1,35 @@
 # Knowledge Assistant
 
-> **Enterprise knowledge workspace for semantic retrieval, document inspection, and evidence-based AI.**
+> **Enterprise AI workspace for semantic retrieval, document inspection, and evidence-backed enterprise knowledge.**
 
 ---
 
 ![Knowledge Assistant](docs/images/hero.png)
 
+**Built with:** React • Node.js • Express • OpenAI • Supabase • PostgreSQL • pgvector
+
 ---
 
 ## Overview
 
-The Knowledge Assistant is an enterprise knowledge workspace designed to help organizations retrieve, inspect, and understand institutional knowledge stored across internal documentation.
+Knowledge Assistant is an enterprise AI application that helps organizations retrieve, inspect, and understand institutional knowledge stored across internal documentation.
 
-Rather than functioning as a traditional AI chatbot, the application combines semantic retrieval, document inspection, metadata extraction, and transparent evidence into a single workspace where organizational knowledge can be explored independently of conversation.
+Rather than layering a chatbot on top of enterprise documents, the application combines semantic retrieval, document inspection, metadata extraction, and evidence-backed responses into a unified workspace where organizational knowledge remains transparent, inspectable, and grounded in source material.
 
-The project emphasizes an evidence-first approach to AI by helping users understand not only **what** the system concludes, but **why** it reached that conclusion.
-
----
-
-# Why I Built This
-
-Organizations invest enormous effort creating documentation:
-
-- Standard Operating Procedures
-- Policies
-- Employee Handbooks
-- Technical Documentation
-- Process Guides
-- Compliance Manuals
-
-Unfortunately, much of that knowledge becomes difficult to discover and even harder to trust.
-
-Many AI document assistants focus primarily on generating answers.
-
-I wanted to explore a different approach.
-
-Instead of hiding organizational knowledge behind a chat interface, I wanted to build a workspace where users can:
-
-- browse organizational knowledge,
-- inspect documents,
-- understand relationships,
-- review supporting evidence,
-- and use AI as one interface into that knowledge rather than the product itself.
+Instead of asking users to simply trust an AI-generated answer, Knowledge Assistant exposes the supporting evidence so users can understand both **what** the system concluded and **why** it reached that conclusion.
 
 ---
 
-# Product Philosophy
+# Highlights
 
-The application is built around five principles.
-
-### 1. Knowledge already exists.
-
-Organizations have already documented much of what they know.
-
-The challenge is making that knowledge accessible.
-
----
-
-### 2. Evidence should be visible.
-
-Every AI response should expose the information used to generate it.
-
----
-
-### 3. Documents are first-class objects.
-
-Documents remain inspectable independently of conversational AI.
-
----
-
-### 4. Relationships matter.
-
-Knowledge becomes more valuable when related documents can be explored together.
-
----
-
-### 5. Human judgment remains central.
-
-The goal is not replacing organizational expertise.
-
-The goal is supporting better decisions through transparent information.
-
----
-
-# Typical Workflow
-
-```text
-Upload Enterprise Documents
-          ↓
-Automatic Parsing
-          ↓
-Semantic Indexing
-          ↓
-Knowledge Library
-          ↓
-Document Inspection
-          ↓
-Ask Questions
-          ↓
-Grounded Response
-          ↓
-Supporting Evidence
-          ↓
-Human Judgment
-```
-
----
-
-# Current Features
-
-## Document Upload
-
-Upload enterprise PDF documentation for semantic indexing.
-
-Current capabilities include:
-
-- PDF parsing
-- Chunk generation
-- Embedding creation
-- Vector storage
-
----
-
-## Knowledge Library
-
-Browse indexed documentation without asking a question.
-
-Current capabilities include:
-
-- Live search
-- Department grouping
-- Document selection
-- Metadata display
-- Collapsible navigation
-
----
-
-## Document Inspector
-
-Inspect enterprise documents independently of conversational retrieval.
-
-Displays:
-
-- Department
-- Owner
-- Status
-- Revision
-- Effective date
-- Purpose
-- Document structure
-- Related documents
-- Indexed sections
-
----
-
-## Semantic Question Answering
-
-Ask operational questions against indexed organizational knowledge.
-
-Responses are generated from retrieved evidence rather than unsupported reasoning.
-
----
-
-## Evidence Workspace
-
-Every response includes supporting evidence.
-
-Current evidence presentation includes:
-
-- Supporting documents
-- Supporting excerpts
-- Similarity scores
-- Retrieved section counts
-
-The application intentionally emphasizes transparency over opaque confidence metrics.
+- Evidence-backed AI responses with transparent supporting sources
+- Semantic search across enterprise documentation
+- Interactive document inspection with rich metadata
+- Knowledge Library for browsing organizational documents
+- Relationship-aware document exploration
+- Modular React and Express architecture
+- OpenAI-powered semantic retrieval
+- Supabase + PostgreSQL + pgvector backend
 
 ---
 
@@ -199,7 +55,7 @@ Browse organizational documentation by department, search indexed content, and i
 
 ![Document Inspector](docs/images/inspector.png)
 
-Inspect document metadata, purpose, structure, indexed sections, and related documents without relying on AI-generated responses.
+Inspect document metadata, structure, indexed sections, and related documents without relying on AI-generated responses.
 
 ---
 
@@ -208,6 +64,179 @@ Inspect document metadata, purpose, structure, indexed sections, and related doc
 ![Evidence](docs/images/evidence.png)
 
 Every response includes transparent supporting evidence so users can verify conclusions against retrieved organizational knowledge.
+
+---
+
+# What This Project Demonstrates
+
+This project demonstrates my approach to enterprise AI implementation.
+
+- Building AI applications around organizational workflows rather than chat interfaces.
+- Designing evidence-backed AI systems where users can inspect supporting information.
+- Separating presentation, retrieval, metadata, and AI orchestration into modular services.
+- Treating organizational knowledge as a durable organizational asset.
+- Building software that organizations can extend and maintain over time.
+
+---
+
+# Why I Built This
+
+Organizations invest enormous effort creating documentation, including:
+
+- Standard Operating Procedures
+- Policies
+- Employee Handbooks
+- Technical Documentation
+- Process Guides
+- Compliance Manuals
+
+Unfortunately, much of that knowledge becomes difficult to discover and even harder to trust.
+
+Many AI document assistants focus primarily on generating answers.
+
+I wanted to explore a different approach.
+
+Instead of hiding organizational knowledge behind a chat interface, I wanted to build a workspace where users can:
+
+- Browse organizational knowledge
+- Inspect documents independently
+- Explore relationships between documents
+- Review supporting evidence
+- Use AI as one interface into organizational knowledge rather than the product itself
+
+---
+
+# Design Principles
+
+Knowledge Assistant is built around five design principles.
+
+### Knowledge already exists.
+
+Organizations have already documented much of what they know.
+
+The challenge is making that knowledge discoverable.
+
+---
+
+### Evidence should be visible.
+
+Every AI response should expose the information used to generate it.
+
+---
+
+### Documents are durable organizational assets.
+
+Documents remain independently inspectable regardless of how users interact with AI.
+
+---
+
+### Relationships matter.
+
+Knowledge becomes more valuable when related documents can be explored together.
+
+---
+
+### Human judgment remains central.
+
+The goal is not replacing organizational expertise.
+
+The goal is supporting better decisions through transparent information.
+
+---
+
+# Application Flow
+
+```text
+PDF Upload
+      │
+      ▼
+Document Processing
+      │
+      ▼
+Semantic Indexing
+      │
+      ▼
+Knowledge Library
+      │
+      ▼
+Document Inspection
+      │
+      ▼
+Evidence Retrieval
+      │
+      ▼
+Grounded AI Response
+```
+
+---
+
+# Features
+
+## Document Upload
+
+Upload enterprise PDF documentation for semantic indexing.
+
+Current capabilities include:
+
+- PDF parsing
+- Chunk generation
+- Embedding generation
+- Vector storage
+
+---
+
+## Knowledge Library
+
+Browse indexed documentation without asking a question.
+
+Features include:
+
+- Live search
+- Department grouping
+- Document selection
+- Metadata display
+- Collapsible navigation
+
+---
+
+## Document Inspector
+
+Inspect enterprise documents independently of conversational retrieval.
+
+Displays:
+
+- Department
+- Owner
+- Status
+- Revision
+- Effective Date
+- Purpose
+- Document structure
+- Related documents
+- Indexed sections
+
+---
+
+## Semantic Question Answering
+
+Ask operational questions against indexed organizational knowledge.
+
+Responses are generated from retrieved evidence rather than unsupported reasoning.
+
+---
+
+## Evidence Workspace
+
+Every AI response includes supporting evidence.
+
+Evidence currently includes:
+
+- Supporting documents
+- Supporting excerpts
+- Similarity scores
+- Retrieved section counts
+
+The application intentionally emphasizes transparency over opaque confidence metrics.
 
 ---
 
@@ -261,52 +290,36 @@ Backend responsibilities include:
 
 ---
 
-# Engineering Principles
+# Engineering Challenges
 
-### Separation of Concerns
+This project explores several architectural challenges common to enterprise AI systems.
 
-Presentation, domain services, infrastructure, and AI orchestration remain independently evolvable.
-
----
-
-### Evidence Before Trust
-
-Evidence is constructed independently of prompt generation and remains inspectable after responses are generated.
-
----
-
-### Documents Before Conversation
-
-Documents are modeled as persistent organizational assets rather than temporary retrieval targets.
-
----
-
-### AI as Infrastructure
-
-Large language models provide one interface into organizational knowledge.
-
-They do not define the product.
+- Designing evidence-backed AI instead of opaque chat interactions.
+- Separating document inspection from conversational retrieval.
+- Modeling organizational documents as durable organizational assets.
+- Keeping retrieval, metadata, and AI orchestration independently evolvable.
+- Balancing retrieval quality with transparency and user trust.
 
 ---
 
 # Technology Stack
 
-## Frontend
+### Frontend
 
 - React
 - Vite
 
-## Backend
+### Backend
 
 - Node.js
 - Express
 
-## AI
+### AI
 
 - OpenAI Embeddings
 - OpenAI Chat API
 
-## Database
+### Database
 
 - Supabase
 - PostgreSQL
@@ -314,7 +327,7 @@ They do not define the product.
 
 ---
 
-# Current Project Status
+# Project Status
 
 ## Completed
 
@@ -334,47 +347,30 @@ They do not define the product.
 
 ---
 
-## Active Development
-
-Current development focuses on expanding the enterprise knowledge experience.
-
-Areas under active development include:
-
-- Richer metadata
-- Relationship inference
-- Knowledge explorer
-- Evidence refinement
-- Enterprise demo organization
-
----
-
 # Roadmap
 
-Planned future capabilities include:
+Future improvements may include:
 
-- Knowledge Explorer
-- Knowledge graph visualization
-- Governance dashboard
-- Authority-aware retrieval
-- Cross-document reasoning
-- Document versioning
-- Organizational knowledge analytics
+- Enhanced document relationships
+- Richer metadata extraction
+- Cross-document navigation
+- Improved evidence visualization
+- Performance optimization
 
 ---
 
 # Running the Project
 
-
 ## Install
 
-Frontend
+### Frontend
 
 ```bash
 cd client
 npm install
 ```
 
-Backend
+### Backend
 
 ```bash
 cd server
@@ -385,14 +381,14 @@ npm install
 
 ## Start
 
-Backend
+### Backend
 
 ```bash
 cd server
 npm run dev
 ```
 
-Frontend
+### Frontend
 
 ```bash
 cd client
@@ -403,9 +399,9 @@ npm run dev
 
 # About This Project
 
-This project is actively being developed as a portfolio demonstration of enterprise AI implementation, information architecture, and knowledge systems engineering.
+Knowledge Assistant was built as a portfolio project exploring enterprise AI implementation, information architecture, and knowledge systems engineering.
 
-Its purpose is not simply to demonstrate Retrieval-Augmented Generation (RAG), but to explore how organizations can interact with documented knowledge through evidence, transparency, and structured information.
+Rather than serving as a demonstration of Retrieval-Augmented Generation (RAG) alone, the project explores how enterprise knowledge can remain transparent, inspectable, and evidence-backed. The emphasis is on information architecture, organizational knowledge, and AI-assisted retrieval rather than conversational AI alone.
 
 ---
 
@@ -427,4 +423,4 @@ Austin, Texas
 
 **LinkedIn:** https://www.linkedin.com/in/anson-o-connor-2404b4282
 
-*Portfolio website coming soon.*
+**Website:** https://www.synapseflowsystems.com
