@@ -421,6 +421,6 @@ AI Implementation & Workflow Systems Architect
 
 Austin, Texas
 
-**LinkedIn:** https://www.linkedin.com/in/anson-o-connor-2404b4282
+**LinkedIn:** www.linkedin.com/in/ansonoconnor
 
-**Website:** https://www.synapseflowsystems.com
+**Website:** www.synapseflowsystems.com
