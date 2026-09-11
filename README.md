@@ -1,6 +1,6 @@
 # Knowledge Assistant
 
-> **Enterprise AI workspace for semantic retrieval, document inspection, and evidence-backed enterprise knowledge.**
+> **Enterprise AI workspace for semantic retrieval, document inspection, and evidence-backed organizational knowledge.**
 
 ---
 
@@ -14,7 +14,7 @@
 
 Knowledge Assistant is an enterprise AI application that helps organizations retrieve, inspect, and understand institutional knowledge stored across internal documentation.
 
-Rather than layering a chatbot on top of enterprise documents, the application combines semantic retrieval, document inspection, metadata extraction, and evidence-backed responses into a unified workspace where organizational knowledge remains transparent, inspectable, and grounded in source material.
+Rather than layering a chatbot on top of enterprise documents, the application combines semantic retrieval, document inspection, metadata extraction, authenticated access, and evidence-backed responses into a unified workspace where organizational knowledge remains transparent, inspectable, and grounded in source material.
 
 Instead of asking users to simply trust an AI-generated answer, Knowledge Assistant exposes the supporting evidence so users can understand both **what** the system concluded and **why** it reached that conclusion.
 
@@ -24,6 +24,9 @@ Instead of asking users to simply trust an AI-generated answer, Knowledge Assist
 
 - Evidence-backed AI responses with transparent supporting sources
 - Semantic search across enterprise documentation
+- Authenticated workspace using Supabase Auth
+- JWT validation at the Express API boundary
+- Protected document retrieval, question answering, and PDF ingestion
 - Interactive document inspection with rich metadata
 - Knowledge Library for browsing organizational documents
 - Relationship-aware document exploration
@@ -71,11 +74,13 @@ Every response includes transparent supporting evidence so users can verify conc
 
 This project demonstrates my approach to enterprise AI implementation.
 
-- Building AI applications around organizational workflows rather than chat interfaces.
-- Designing evidence-backed AI systems where users can inspect supporting information.
-- Separating presentation, retrieval, metadata, and AI orchestration into modular services.
-- Treating organizational knowledge as a durable organizational asset.
-- Building software that organizations can extend and maintain over time.
+- Building AI applications around organizational workflows rather than chat interfaces
+- Designing evidence-backed AI systems where users can inspect supporting information
+- Establishing authenticated identity before privileged application operations
+- Enforcing authentication at the API boundary rather than relying on frontend gating
+- Separating presentation, retrieval, metadata, authentication, and AI orchestration into modular responsibilities
+- Treating organizational knowledge as a durable organizational asset
+- Building software that organizations can extend and maintain over time
 
 ---
 
@@ -108,7 +113,7 @@ Instead of hiding organizational knowledge behind a chat interface, I wanted to 
 
 # Design Principles
 
-Knowledge Assistant is built around five design principles.
+Knowledge Assistant is built around six design principles.
 
 ### Knowledge already exists.
 
@@ -121,6 +126,14 @@ The challenge is making that knowledge discoverable.
 ### Evidence should be visible.
 
 Every AI response should expose the information used to generate it.
+
+---
+
+### Identity should be established before privileged work.
+
+Reaching an API endpoint should not be sufficient to exercise privileged application capabilities.
+
+Protected operations require an authenticated principal whose token is independently validated by the backend.
 
 ---
 
@@ -146,26 +159,69 @@ The goal is supporting better decisions through transparent information.
 
 # Application Flow
 
+Knowledge Assistant contains two primary pipelines: document ingestion and evidence-backed question answering.
+
+## Document Ingestion
+
 ```text
+Authenticated User
+      │
+      ▼
+Express API
+      │
+      ▼
+Authentication Validation
+      │
+      ▼
 PDF Upload
       │
       ▼
-Document Processing
+Text Extraction
       │
       ▼
-Semantic Indexing
+Chunk Generation
       │
       ▼
-Knowledge Library
+Embedding Generation
       │
       ▼
-Document Inspection
+PostgreSQL + pgvector
       │
       ▼
-Evidence Retrieval
+Searchable Knowledge
+```
+
+## Question Answering
+
+```text
+Authenticated User
       │
       ▼
-Grounded AI Response
+Question
+      │
+      ▼
+Express API
+      │
+      ▼
+Authentication Validation
+      │
+      ▼
+Question Embedding
+      │
+      ▼
+Semantic Retrieval
+      │
+      ▼
+Evidence Construction
+      │
+      ▼
+Grounded Model Context
+      │
+      ▼
+AI Response
+      │
+      ▼
+Answer + Supporting Evidence
 ```
 
 ---
@@ -178,10 +234,13 @@ Upload enterprise PDF documentation for semantic indexing.
 
 Current capabilities include:
 
+- Authenticated upload
 - PDF parsing
 - Chunk generation
 - Embedding generation
 - Vector storage
+
+Authentication is evaluated before file-processing middleware accepts the upload.
 
 ---
 
@@ -191,6 +250,7 @@ Browse indexed documentation without asking a question.
 
 Features include:
 
+- Authenticated access
 - Live search
 - Department grouping
 - Document selection
@@ -223,6 +283,8 @@ Ask operational questions against indexed organizational knowledge.
 
 Responses are generated from retrieved evidence rather than unsupported reasoning.
 
+Questions are processed only after the API establishes an authenticated user.
+
 ---
 
 ## Evidence Workspace
@@ -240,6 +302,92 @@ The application intentionally emphasizes transparency over opaque confidence met
 
 ---
 
+# Authentication & Security
+
+Knowledge Assistant establishes user identity before allowing access to privileged application capabilities.
+
+The React client uses Supabase Auth to establish an authenticated session and sends the user's access token with protected API requests. The Express API independently validates that Bearer token through Supabase Auth before performing document retrieval, question answering, or PDF ingestion.
+
+## Current Authentication Boundary
+
+```text
+User
+  │
+  ▼
+Supabase Auth
+  │
+  ▼
+Authenticated Session / JWT
+  │
+  ▼
+React Client
+  │
+  ▼
+Authorization: Bearer <token>
+  │
+  ▼
+Express API
+  │
+  ▼
+JWT Validation
+  │
+  ▼
+Verified User
+  │
+  ▼
+Protected Application Operation
+```
+
+Protected operations currently include:
+
+- Document library retrieval
+- Evidence-backed question answering
+- PDF ingestion and indexing
+
+Anonymous requests to protected endpoints are rejected with `401 Unauthorized`.
+
+The browser does not establish trusted identity by supplying a user ID or role. The API validates the signed access token before attaching the verified user to the request.
+
+For PDF ingestion, authentication is evaluated before upload-processing middleware, preventing anonymous callers from initiating file processing, embedding generation, or persistence.
+
+## Authentication vs. Authorization
+
+The current implementation establishes **who the caller is** and prevents anonymous access to protected application capabilities.
+
+It does **not** yet implement organization-, department-, or document-level authorization. Authenticated users currently share access to the same knowledge corpus.
+
+A future resource-authorization layer would constrain the eligible knowledge corpus before semantic retrieval:
+
+```text
+Identity
+  │
+  ▼
+Organization Membership
+  │
+  ▼
+Resource Authorization
+  │
+  ▼
+Permitted Knowledge Corpus
+  │
+  ▼
+Semantic Retrieval
+  │
+  ▼
+Evidence
+  │
+  ▼
+Grounded Answer
+```
+
+This reflects an important architectural principle:
+
+> **Relevance does not create authority.**
+
+A document being highly relevant to a question does not mean the requesting user is entitled to retrieve its contents. Resource authorization should therefore occur before unauthorized evidence can enter the evidence set or model context.
+
+---
+
 # Architecture
 
 ## Frontend
@@ -247,6 +395,7 @@ The application intentionally emphasizes transparency over opaque confidence met
 ```text
 App.jsx
 │
+├── AuthPanel
 ├── UploadPanel
 ├── KnowledgeLibrary
 ├── DocumentInspector
@@ -255,7 +404,9 @@ App.jsx
 └── EvidencePanel
 ```
 
-Presentation responsibilities remain isolated while `App.jsx` coordinates application state and API communication.
+`App.jsx` coordinates application state, authenticated session state, and API communication while presentation responsibilities remain isolated in dedicated components.
+
+A browser-side Supabase client manages authentication using public client configuration. Privileged Supabase credentials remain server-side.
 
 ---
 
@@ -264,8 +415,10 @@ Presentation responsibilities remain isolated while `App.jsx` coordinates applic
 ```text
 Express API
 │
+├── Authentication Middleware
+│
 ├── Upload Route
-├── Retrieval Route
+├── Ask Route
 ├── Documents Route
 │
 ├── Retrieval Service
@@ -273,13 +426,18 @@ Express API
 ├── documentMetadataService
 ├── knowledgeRelationshipService
 │
+├── OpenAI
+│
 └── Supabase
       │
-      └── knowledge_chunks
+      └── PostgreSQL + pgvector
+            │
+            └── knowledge_chunks
 ```
 
 Backend responsibilities include:
 
+- Authentication validation
 - PDF ingestion
 - Embedding generation
 - Semantic retrieval
@@ -288,17 +446,39 @@ Backend responsibilities include:
 - Evidence construction
 - Prompt assembly
 
+The Express API performs privileged operations only after the authentication middleware establishes a verified user.
+
+---
+
+# Retrieval Architecture
+
+When an authenticated user asks a question:
+
+1. The question is converted into an embedding using OpenAI.
+2. The embedding is passed through Supabase to a PostgreSQL retrieval function.
+3. pgvector compares the question vector against stored document-chunk embeddings using cosine distance.
+4. Matching chunks are filtered and ranked by semantic similarity.
+5. Retrieved chunks are transformed into a structured evidence set.
+6. The same retrieved knowledge is assembled into the grounded context supplied to the language model.
+7. The generated answer and supporting evidence are returned together to the client.
+
+This keeps retrieval and evidence construction under application control rather than asking the language model to determine its own sources after generation.
+
 ---
 
 # Engineering Challenges
 
 This project explores several architectural challenges common to enterprise AI systems.
 
-- Designing evidence-backed AI instead of opaque chat interactions.
-- Separating document inspection from conversational retrieval.
-- Modeling organizational documents as durable organizational assets.
-- Keeping retrieval, metadata, and AI orchestration independently evolvable.
-- Balancing retrieval quality with transparency and user trust.
+- Designing evidence-backed AI instead of opaque chat interactions
+- Separating document inspection from conversational retrieval
+- Modeling organizational documents as durable organizational assets
+- Establishing trusted identity at the API boundary
+- Distinguishing frontend access gating from backend security enforcement
+- Separating authentication from resource-level authorization
+- Preventing privileged operations from executing before identity is established
+- Keeping retrieval, metadata, authentication, and AI orchestration independently evolvable
+- Balancing retrieval quality with transparency and user trust
 
 ---
 
@@ -308,6 +488,7 @@ This project explores several architectural challenges common to enterprise AI s
 
 - React
 - Vite
+- Supabase Auth Client
 
 ### Backend
 
@@ -319,9 +500,10 @@ This project explores several architectural challenges common to enterprise AI s
 - OpenAI Embeddings
 - OpenAI Chat API
 
-### Database
+### Database & Identity
 
 - Supabase
+- Supabase Auth
 - PostgreSQL
 - pgvector
 
@@ -344,6 +526,13 @@ This project explores several architectural challenges common to enterprise AI s
 - Relationship navigation
 - Modular React architecture
 - Service-oriented backend architecture
+- Supabase user authentication
+- Browser session restoration
+- Bearer-token API requests
+- Server-side JWT validation
+- Authentication protection for document retrieval
+- Authentication protection for question answering
+- Authentication protection for PDF ingestion
 
 ---
 
@@ -351,11 +540,15 @@ This project explores several architectural challenges common to enterprise AI s
 
 Future improvements may include:
 
+- Organization and membership modeling
+- Resource-level document authorization before retrieval
 - Enhanced document relationships
 - Richer metadata extraction
 - Cross-document navigation
 - Improved evidence visualization
 - Performance optimization
+
+The current authentication layer establishes caller identity. Future authorization work would determine which organizational resources an authenticated principal is entitled to retrieve.
 
 ---
 
@@ -379,6 +572,21 @@ npm install
 
 ---
 
+## Environment Configuration
+
+The application requires separate client and server environment configuration.
+
+The browser uses only public Supabase client configuration:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
+
+Privileged credentials such as the Supabase service-role key and OpenAI API key must remain server-side and must not be exposed through Vite or committed to source control.
+
+---
+
 ## Start
 
 ### Backend
@@ -399,9 +607,11 @@ npm run dev
 
 # About This Project
 
-Knowledge Assistant was built as a portfolio project exploring enterprise AI implementation, information architecture, and knowledge systems engineering.
+Knowledge Assistant was built as a portfolio project exploring enterprise AI implementation, information architecture, knowledge systems engineering, and application trust boundaries.
 
-Rather than serving as a demonstration of Retrieval-Augmented Generation (RAG) alone, the project explores how enterprise knowledge can remain transparent, inspectable, and evidence-backed. The emphasis is on information architecture, organizational knowledge, and AI-assisted retrieval rather than conversational AI alone.
+Rather than serving as a demonstration of Retrieval-Augmented Generation (RAG) alone, the project explores how organizational knowledge can remain transparent, inspectable, evidence-backed, and accessible through authenticated application boundaries.
+
+The project intentionally distinguishes its current authenticated-access model from future resource-level authorization rather than treating login as equivalent to complete enterprise access control.
 
 ---
 
