@@ -686,3 +686,111 @@ Department Groups
   transform: none;
   color: #93c5fd;
 }
+/******************************************************************************
+Authentication
+******************************************************************************/
+
+.auth-panel {
+  width: min(100%, 440px);
+  margin: 4px auto 0;
+  padding: 30px;
+
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
+    var(--panel);
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.015),
+    0 18px 42px rgba(0, 0, 0, 0.22);
+}
+
+.auth-panel form {
+  display: grid;
+  gap: 20px;
+}
+
+.auth-panel form > div {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-panel label {
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.auth-panel input {
+  width: 100%;
+  min-width: 0;
+  padding: 13px 14px;
+
+  background: var(--panel-deep);
+  color: var(--text);
+
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+
+  font-size: 0.95rem;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.auth-panel input:hover {
+  border-color: #465063;
+}
+
+.auth-panel input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #131720;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.auth-panel button {
+  width: 100%;
+  margin-top: 2px;
+  padding: 13px 18px;
+}
+
+.auth-panel > p {
+  margin: 18px 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.auth-panel > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.auth-panel > div strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #ffffff;
+}
+
+.auth-panel > div p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.auth-panel > div + button {
+  margin-top: 20px;
+}
+
+@media (max-width: 760px) {
+  .auth-panel {
+    padding: 24px;
+  }
+}
