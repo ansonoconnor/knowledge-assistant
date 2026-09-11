@@ -5,6 +5,10 @@
  * Returns the organization's indexed document catalog with extracted metadata,
  * document sections, and relationship data for browsing and inspection.
  *
+ * Security:
+ * Access requires an authenticated Supabase user. Authentication is enforced
+ * before the route exercises the backend's privileged Supabase access.
+ *
  * Notes:
  * Chunks belonging to the same source PDF are grouped into a single logical
  * enterprise document by removing the " - Part X" suffix generated during
@@ -13,6 +17,10 @@
 
 const express = require("express");
 const supabase = require("../clients/supabase");
+
+const {
+  requireAuthenticatedUser
+} = require("../middleware/authenticate");
 
 const {
   extractDocumentMetadata,
@@ -37,88 +45,86 @@ function normalizeDocumentTitle(title = "") {
  * Routes
  ******************************************************************************/
 
-router.get("/", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("knowledge_chunks")
-      .select("id, title, chunk_text")
-      .order("title", { ascending: true })
-      .order("id", { ascending: true });
+router.get(
+  "/",
+  requireAuthenticatedUser,
+  async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from("knowledge_chunks")
+        .select("id, title, chunk_text")
+        .order("title", { ascending: true })
+        .order("id", { ascending: true });
 
-    if (error) {
-      throw error;
-    }
-
-    const groupedDocuments = {};
-
-    data.forEach((row) => {
-
-      const documentTitle = normalizeDocumentTitle(row.title);
-
-      if (!groupedDocuments[documentTitle]) {
-        groupedDocuments[documentTitle] = {
-          title: documentTitle,
-          chunks: []
-        };
+      if (error) {
+        throw error;
       }
 
-      groupedDocuments[documentTitle].chunks.push(row);
+      const groupedDocuments = {};
 
-    });
+      data.forEach((row) => {
+        const documentTitle = normalizeDocumentTitle(row.title);
 
-    const documents = Object.values(groupedDocuments).map((document) => {
+        if (!groupedDocuments[documentTitle]) {
+          groupedDocuments[documentTitle] = {
+            title: documentTitle,
+            chunks: []
+          };
+        }
 
-      const combinedText = document.chunks
-        .map((chunk) => chunk.chunk_text || "")
-        .join("\n\n");
-
-      const metadata = extractDocumentMetadata({
-        title: document.title,
-        chunkText: combinedText,
-        chunkCount: document.chunks.length
+        groupedDocuments[documentTitle].chunks.push(row);
       });
 
-      return {
-        title: document.title,
+      const documents = Object.values(groupedDocuments).map((document) => {
+        const combinedText = document.chunks
+          .map((chunk) => chunk.chunk_text || "")
+          .join("\n\n");
 
-        chunks: document.chunks.length,
+        const metadata = extractDocumentMetadata({
+          title: document.title,
+          chunkText: combinedText,
+          chunkCount: document.chunks.length
+        });
 
-        department: metadata.department,
-        owner: metadata.owner,
-        status: metadata.status,
-        revision: metadata.revision,
-        effectiveDate: metadata.effectiveDate,
-        purpose: metadata.purpose,
+        return {
+          title: document.title,
 
-        relatedPolicies: metadata.relatedPolicies,
-        sectionHeadings: metadata.sectionHeadings,
+          chunks: document.chunks.length,
 
-        sections: extractDocumentSections(document.chunks),
+          department: metadata.department,
+          owner: metadata.owner,
+          status: metadata.status,
+          revision: metadata.revision,
+          effectiveDate: metadata.effectiveDate,
+          purpose: metadata.purpose,
 
-        relatedDocuments: getRelatedDocuments(document.title)
-      };
+          relatedPolicies: metadata.relatedPolicies,
+          sectionHeadings: metadata.sectionHeadings,
 
-    });
+          sections: extractDocumentSections(document.chunks),
 
-    documents.sort((a, b) =>
-      a.title.localeCompare(b.title)
-    );
+          relatedDocuments: getRelatedDocuments(document.title)
+        };
+      });
 
-    res.json({
-      success: true,
-      documents
-    });
+      documents.sort((a, b) =>
+        a.title.localeCompare(b.title)
+      );
 
-  } catch (error) {
+      res.json({
+        success: true,
+        documents
+      });
 
-    console.error(error);
+    } catch (error) {
+      console.error(error);
 
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
   }
-});
+);
 
 module.exports = router;

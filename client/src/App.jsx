@@ -2,13 +2,21 @@
  * File: App.jsx
  * Layer: Application
  * Responsibility:
- * Coordinates the Knowledge Assistant workspace by orchestrating document
- * upload, retrieval, evidence presentation, and document inspection.
+ * Coordinates authentication, document upload, retrieval, evidence
+ * presentation, and document inspection for the Knowledge Assistant workspace.
+ *
+ * Security:
+ * Privileged API requests include the authenticated Supabase access token.
+ * The Express API remains responsible for verifying that token before
+ * privileged work is performed.
  ******************************************************************************/
 
 import { useState, useEffect } from "react";
 import "./App.css";
 
+import supabase from "./lib/supabase";
+
+import AuthPanel from "./components/AuthPanel";
 import UploadPanel from "./components/UploadPanel";
 import KnowledgeLibrary from "./components/KnowledgeLibrary";
 import DocumentInspector from "./components/DocumentInspector";
@@ -17,6 +25,9 @@ import AnswerPanel from "./components/AnswerPanel";
 import EvidencePanel from "./components/EvidencePanel";
 
 function App() {
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [evidence, setEvidence] = useState(null);
@@ -31,24 +42,145 @@ function App() {
 
   const API_BASE = "http://localhost:5001";
 
+  /******************************************************************************
+   * Authentication lifecycle
+   ******************************************************************************/
+
   useEffect(() => {
-    loadDocuments();
+    let mounted = true;
+
+    async function initializeAuthentication() {
+      const {
+        data,
+        error
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error(
+          "SESSION INITIALIZATION ERROR:",
+          error
+        );
+      }
+
+      if (mounted) {
+        setSession(
+          data?.session || null
+        );
+
+        setAuthLoading(false);
+      }
+    }
+
+    initializeAuthentication();
+
+    const {
+      data: authListener
+    } = supabase.auth.onAuthStateChange(
+      (_event, nextSession) => {
+        setSession(nextSession);
+        setAuthLoading(false);
+      }
+    );
+
+    return () => {
+      mounted = false;
+
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  async function loadDocuments() {
+  /******************************************************************************
+   * Authenticated workspace lifecycle
+   ******************************************************************************/
+
+  useEffect(() => {
+    if (session?.access_token) {
+      loadDocuments(
+        session.access_token
+      );
+    } else {
+      setDocuments([]);
+      setSelectedDocument(null);
+      setAnswer("");
+      setEvidence(null);
+      setUploadMessage("");
+    }
+  }, [session]);
+
+  /******************************************************************************
+   * API helpers
+   ******************************************************************************/
+
+  function buildAuthorizationHeaders(
+    accessToken
+  ) {
+    return {
+      Authorization:
+        `Bearer ${accessToken}`
+    };
+  }
+
+  async function loadDocuments(
+    accessToken = session?.access_token
+  ) {
+    if (!accessToken) {
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_BASE}/documents`);
-      const data = await response.json();
+      const response = await fetch(
+        `${API_BASE}/documents`,
+        {
+          headers:
+            buildAuthorizationHeaders(
+              accessToken
+            )
+        }
+      );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "Unable to load documents"
+        );
+      }
 
       if (data.success) {
-        setDocuments(data.documents);
+        setDocuments(
+          data.documents
+        );
 
-        if (!selectedDocument && data.documents.length > 0) {
-          setSelectedDocument(data.documents[0]);
-        }
+        setSelectedDocument(
+          (currentDocument) => {
+            if (currentDocument) {
+              const stillExists =
+                data.documents.find(
+                  (document) =>
+                    document.title ===
+                    currentDocument.title
+                );
+
+              if (stillExists) {
+                return stillExists;
+              }
+            }
+
+            return (
+              data.documents[0] ||
+              null
+            );
+          }
+        );
       }
+
     } catch (error) {
-      console.error(error);
+      console.error(
+        "DOCUMENT LOAD ERROR:",
+        error
+      );
     }
   }
 
@@ -57,7 +189,12 @@ function App() {
   }
 
   async function askQuestion() {
-    if (!question.trim()) return;
+    if (
+      !question.trim() ||
+      !session?.access_token
+    ) {
+      return;
+    }
 
     setLoading(true);
     setAnswer("");
@@ -65,50 +202,130 @@ function App() {
 
     try {
       const response = await fetch(
-        `${API_BASE}/ask?question=${encodeURIComponent(question)}`
+        `${API_BASE}/ask?question=${encodeURIComponent(
+          question
+        )}`,
+        {
+          headers:
+            buildAuthorizationHeaders(
+              session.access_token
+            )
+        }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
-      setAnswer(data.answer || "");
-      setEvidence(data.evidence || null);
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "Unable to answer question"
+        );
+      }
+
+      setAnswer(
+        data.answer || ""
+      );
+
+      setEvidence(
+        data.evidence || null
+      );
+
     } catch (error) {
-      console.error(error);
-      setAnswer("Error contacting server.");
-    }
+      console.error(
+        "QUESTION ERROR:",
+        error
+      );
 
-    setLoading(false);
+      setAnswer(
+        error.message ||
+        "Error contacting server."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function uploadPdf() {
-    if (!pdfFile) return;
+    if (
+      !pdfFile ||
+      !session?.access_token
+    ) {
+      return;
+    }
 
-    setUploadMessage("Indexing document...");
+    setUploadMessage(
+      "Indexing document..."
+    );
 
-    const formData = new FormData();
-    formData.append("pdf", pdfFile);
+    const formData =
+      new FormData();
+
+    formData.append(
+      "pdf",
+      pdfFile
+    );
 
     try {
-      const response = await fetch(`${API_BASE}/pdf/upload`, {
-        method: "POST",
-        body: formData
-      });
+      const response = await fetch(
+        `${API_BASE}/pdf/upload`,
+        {
+          method: "POST",
+          headers:
+            buildAuthorizationHeaders(
+              session.access_token
+            ),
+          body: formData
+        }
+      );
 
-      const data = await response.json();
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "Upload failed."
+        );
+      }
 
       if (data.success) {
         setUploadMessage(
           `Document indexed successfully. ${data.chunksCreated} searchable sections created.`
         );
 
-        await loadDocuments();
-      } else {
-        setUploadMessage(data.error || "Upload failed.");
+        await loadDocuments(
+          session.access_token
+        );
       }
+
     } catch (error) {
-      console.error(error);
-      setUploadMessage("Upload failed.");
+      console.error(
+        "UPLOAD ERROR:",
+        error
+      );
+
+      setUploadMessage(
+        error.message ||
+        "Upload failed."
+      );
     }
+  }
+
+  /******************************************************************************
+   * Rendering
+   ******************************************************************************/
+
+  if (authLoading) {
+    return (
+      <div className="app-shell">
+        <main className="workspace">
+          <p>
+            Establishing session...
+          </p>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -118,7 +335,9 @@ function App() {
           Enterprise Knowledge Infrastructure
         </div>
 
-        <h1>Knowledge Assistant</h1>
+        <h1>
+          Knowledge Assistant
+        </h1>
 
         <p>
           Grounded answers backed by retrieved organizational evidence,
@@ -127,55 +346,73 @@ function App() {
       </header>
 
       <main className="workspace">
-        <UploadPanel
-          pdfFile={pdfFile}
-          setPdfFile={setPdfFile}
-          uploadPdf={uploadPdf}
-          uploadMessage={uploadMessage}
+        <AuthPanel
+          session={session}
+          onSessionChange={setSession}
         />
 
-        <div
-          className={`workspace-grid ${
-            libraryCollapsed ? "library-is-collapsed" : ""
-          }`}
-        >
-          <KnowledgeLibrary
-            documents={documents}
-            selectedDocument={selectedDocument}
-            onSelectDocument={selectDocument}
-            collapsed={libraryCollapsed}
-            onToggleCollapsed={() =>
-              setLibraryCollapsed((current) => !current)
-            }
-          />
-
-          <div className="workspace-primary">
-            <DocumentInspector
-              document={selectedDocument}
-              documents={documents}
-              onSelectDocument={selectDocument}
+        {!session?.user ? (
+          <p>
+            Sign in to access organizational knowledge.
+          </p>
+        ) : (
+          <>
+            <UploadPanel
+              pdfFile={pdfFile}
+              setPdfFile={setPdfFile}
+              uploadPdf={uploadPdf}
+              uploadMessage={uploadMessage}
             />
 
-            <QuestionPanel
-              question={question}
-              setQuestion={setQuestion}
-              askQuestion={askQuestion}
-              loading={loading}
-            />
+            <div
+              className={`workspace-grid ${
+                libraryCollapsed
+                  ? "library-is-collapsed"
+                  : ""
+              }`}
+            >
+              <KnowledgeLibrary
+                documents={documents}
+                selectedDocument={selectedDocument}
+                onSelectDocument={selectDocument}
+                collapsed={libraryCollapsed}
+                onToggleCollapsed={() =>
+                  setLibraryCollapsed(
+                    (current) =>
+                      !current
+                  )
+                }
+              />
 
-            <AnswerPanel
-              answer={answer}
-            />
-          </div>
+              <div className="workspace-primary">
+                <DocumentInspector
+                  document={selectedDocument}
+                  documents={documents}
+                  onSelectDocument={selectDocument}
+                />
 
-          <div className="workspace-secondary">
-            <EvidencePanel
-              evidence={evidence}
-              documents={documents}
-              onSelectDocument={selectDocument}
-            />
-          </div>
-        </div>
+                <QuestionPanel
+                  question={question}
+                  setQuestion={setQuestion}
+                  askQuestion={askQuestion}
+                  loading={loading}
+                />
+
+                <AnswerPanel
+                  answer={answer}
+                />
+              </div>
+
+              <div className="workspace-secondary">
+                <EvidencePanel
+                  evidence={evidence}
+                  documents={documents}
+                  onSelectDocument={selectDocument}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );

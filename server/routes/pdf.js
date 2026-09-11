@@ -1,10 +1,23 @@
+/******************************************************************************
+ * File: pdf.js
+ * Layer: API Route
+ * Responsibility:
+ * Accepts authenticated PDF uploads, extracts text, divides the document into
+ * searchable chunks, and sends those chunks through the ingestion pipeline.
+ *
+ * Security:
+ * Authentication is enforced before Multer accepts the uploaded file or any
+ * PDF parsing, embedding generation, or database persistence occurs.
+ ******************************************************************************/
+
 const pdf = require("pdf-parse");
 const express = require("express");
 const multer = require("multer");
-const pdfParse = require("pdf-parse");
-console.log("PDF PARSE:");
-console.log(pdfParse);
 const fs = require("fs");
+
+const {
+  requireAuthenticatedUser
+} = require("../middleware/authenticate");
 
 const {
   ingestDocument
@@ -16,9 +29,23 @@ const upload = multer({
   dest: "uploads/"
 });
 
+/******************************************************************************
+ * Routes
+ ******************************************************************************/
+
 router.post(
   "/upload",
+
+  /*
+   * Authentication intentionally comes before Multer.
+   *
+   * An unauthenticated caller should be rejected before the application
+   * accepts a file or performs any downstream processing.
+   */
+  requireAuthenticatedUser,
+
   upload.single("pdf"),
+
   async (req, res) => {
     try {
       if (!req.file) {
