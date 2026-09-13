@@ -124,7 +124,7 @@ router.post(
 
       res.status(500).json({
         success: false,
-        error: error.message
+        error: "Unable to process the PDF upload"
       });
     }
   }

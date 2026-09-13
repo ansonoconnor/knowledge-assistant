@@ -117,11 +117,11 @@ router.get(
       });
 
     } catch (error) {
-      console.error(error);
+      console.error("DOCUMENTS ERROR:", error);
 
       res.status(500).json({
         success: false,
-        error: error.message
+        error: "Unable to retrieve the document library"
       });
     }
   }
