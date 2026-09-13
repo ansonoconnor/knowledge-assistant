@@ -2,18 +2,24 @@
  * File: pdf.js
  * Layer: API Route
  * Responsibility:
- * Accepts authenticated PDF uploads, extracts text, divides the document into
- * searchable chunks, and sends those chunks through the ingestion pipeline.
+ * Accepts authenticated PDF uploads, validates basic upload constraints,
+ * extracts text, divides the document into searchable chunks, and sends those
+ * chunks through the ingestion pipeline.
  *
  * Security:
  * Authentication is enforced before Multer accepts the uploaded file or any
  * PDF parsing, embedding generation, or database persistence occurs.
+ *
+ * Resource lifecycle:
+ * Any temporary file created by Multer is removed after processing, whether
+ * the request succeeds or fails.
  ******************************************************************************/
 
+const path = require("path");
+const fs = require("fs");
 const pdf = require("pdf-parse");
 const express = require("express");
 const multer = require("multer");
-const fs = require("fs");
 
 const {
   requireAuthenticatedUser
@@ -25,13 +31,66 @@ const {
 
 const router = express.Router();
 
+const MAX_PDF_SIZE_BYTES =
+  10 * 1024 * 1024;
+
 const upload = multer({
-  dest: "uploads/"
+  dest: "uploads/",
+  limits: {
+    fileSize: MAX_PDF_SIZE_BYTES
+  },
+  fileFilter: (
+    req,
+    file,
+    callback
+  ) => {
+    const extension =
+      path.extname(
+        file.originalname
+      ).toLowerCase();
+
+    const isPdfExtension =
+      extension === ".pdf";
+
+    const isPdfMimeType =
+      file.mimetype === "application/pdf";
+
+    if (
+      !isPdfExtension ||
+      !isPdfMimeType
+    ) {
+      return callback(
+        new multer.MulterError(
+          "LIMIT_UNEXPECTED_FILE",
+          "pdf"
+        )
+      );
+    }
+
+    callback(null, true);
+  }
 });
 
-/******************************************************************************
- * Routes
- ******************************************************************************/
+function removeTemporaryFile(
+  filePath
+) {
+  if (!filePath) {
+    return;
+  }
+
+  try {
+    if (
+      fs.existsSync(filePath)
+    ) {
+      fs.unlinkSync(filePath);
+    }
+  } catch (error) {
+    console.error(
+      "PDF CLEANUP ERROR:",
+      error
+    );
+  }
+}
 
 router.post(
   "/upload",
@@ -44,7 +103,39 @@ router.post(
    */
   requireAuthenticatedUser,
 
-  upload.single("pdf"),
+  (req, res, next) => {
+    upload.single("pdf")(
+      req,
+      res,
+      (error) => {
+        if (!error) {
+          return next();
+        }
+
+        console.error(
+          "PDF UPLOAD VALIDATION ERROR:",
+          error
+        );
+
+        if (
+          error instanceof multer.MulterError &&
+          error.code === "LIMIT_FILE_SIZE"
+        ) {
+          return res.status(400).json({
+            success: false,
+            error:
+              "PDF must be 10 MB or smaller"
+          });
+        }
+
+        return res.status(400).json({
+          success: false,
+          error:
+            "A valid PDF file is required"
+        });
+      }
+    );
+  },
 
   async (req, res) => {
     try {
@@ -56,7 +147,9 @@ router.post(
       }
 
       const dataBuffer =
-        fs.readFileSync(req.file.path);
+        fs.readFileSync(
+          req.file.path
+        );
 
       const pdfData =
         await pdf(dataBuffer);
@@ -105,8 +198,6 @@ router.post(
         results.push(result);
       }
 
-      fs.unlinkSync(req.file.path);
-
       res.json({
         success: true,
         filename:
@@ -124,8 +215,14 @@ router.post(
 
       res.status(500).json({
         success: false,
-        error: "Unable to process the PDF upload"
+        error:
+          "Unable to process the PDF upload"
       });
+
+    } finally {
+      removeTemporaryFile(
+        req.file?.path
+      );
     }
   }
 );
