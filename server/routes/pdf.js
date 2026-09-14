@@ -191,6 +191,8 @@ router.post(
       ) {
         const result =
           await ingestDocument(
+            req.supabase,
+            req.organizationId,
             `${req.file.originalname} - Part ${i + 1}`,
             chunks[i]
           );

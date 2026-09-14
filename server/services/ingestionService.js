@@ -1,7 +1,11 @@
-const supabase = require("../clients/supabase");
 const { createEmbedding } = require("./embeddingService");
 
-async function ingestDocument(title, content) {
+async function ingestDocument(
+  supabase,
+  organizationId,
+  title,
+  content
+) {
   const embedding =
     await createEmbedding(content);
 
@@ -11,6 +15,8 @@ async function ingestDocument(title, content) {
       {
         title,
         chunk_text: content,
+        organization_id:
+          organizationId,
         embedding
       }
     ])

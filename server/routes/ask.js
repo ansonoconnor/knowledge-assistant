@@ -33,7 +33,12 @@ router.get(
         });
       }
 
-      const matches = await searchKnowledge(question);
+      const matches =
+        await searchKnowledge(
+          req.supabase,
+          req.organizationId,
+          question
+        );
 
       const evidence = buildEvidenceSet(question, matches);
 
