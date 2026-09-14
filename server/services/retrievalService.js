@@ -1,7 +1,10 @@
-const supabase = require("../clients/supabase");
 const { createEmbedding } = require("./embeddingService");
 
-async function searchKnowledge(question) {
+async function searchKnowledge(
+  supabase,
+  organizationId,
+  question
+) {
   const queryEmbedding =
     await createEmbedding(question);
 
@@ -11,7 +14,9 @@ async function searchKnowledge(question) {
       {
         query_embedding: queryEmbedding,
         match_threshold: 0.5,
-        match_count: 5
+        match_count: 5,
+        target_organization_id:
+          organizationId
       }
     );
 

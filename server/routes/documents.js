@@ -7,7 +7,8 @@
  *
  * Security:
  * Access requires an authenticated Supabase user. Authentication is enforced
- * before the route exercises the backend's privileged Supabase access.
+ * before the route uses the request-scoped Supabase client. PostgreSQL RLS
+ * and the explicit organization predicate constrain the returned knowledge.
  *
  * Notes:
  * Chunks belonging to the same source PDF are grouped into a single logical
@@ -16,7 +17,6 @@
  ******************************************************************************/
 
 const express = require("express");
-const supabase = require("../clients/supabase");
 
 const {
   requireAuthenticatedUser
@@ -50,9 +50,16 @@ router.get(
   requireAuthenticatedUser,
   async (req, res) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } =
+        await req.supabase
         .from("knowledge_chunks")
-        .select("id, title, chunk_text")
+        .select(
+          "id, title, chunk_text"
+        )
+        .eq(
+          "organization_id",
+          req.organizationId
+        )
         .order("title", { ascending: true })
         .order("id", { ascending: true });
 

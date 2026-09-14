@@ -7,11 +7,15 @@
  *
  * Security boundary:
  * The browser is not trusted to assert user identity. The bearer token is
- * validated through Supabase Auth, and only the verified user is attached
- * to the Express request.
+ * validated through Supabase Auth. Ordinary database work then uses a
+ * request-scoped Supabase client carrying that verified user's JWT so
+ * PostgreSQL RLS continues to see the authenticated principal.
  ******************************************************************************/
 
-const supabase = require("../clients/supabase");
+const {
+  authenticationClient,
+  createUserSupabaseClient
+} = require("../clients/supabase");
 
 /******************************************************************************
  * Middleware
@@ -43,7 +47,8 @@ async function requireAuthenticatedUser(req, res, next) {
     const {
       data,
       error
-    } = await supabase.auth.getUser(token);
+    } =
+      await authenticationClient.auth.getUser(token);
 
     if (
       error ||
@@ -55,6 +60,42 @@ async function requireAuthenticatedUser(req, res, next) {
       });
     }
 
+    const userSupabase =
+      createUserSupabaseClient(token);
+
+    const {
+      data: memberships,
+      error: membershipError
+    } = await userSupabase
+      .from("organization_memberships")
+      .select("organization_id")
+      .eq("user_id", data.user.id)
+      .limit(2);
+
+    if (membershipError) {
+      throw membershipError;
+    }
+
+    if (!memberships?.length) {
+      return res.status(403).json({
+        success: false,
+        error:
+          "Organization membership required"
+      });
+    }
+
+    /*
+     * Knowledge Assistant currently presents one organizational corpus.
+     * Fail closed if organization selection becomes ambiguous.
+     */
+    if (memberships.length > 1) {
+      return res.status(409).json({
+        success: false,
+        error:
+          "Organization selection required"
+      });
+    }
+
     /*
      * Important:
      * req.user comes from the verified Supabase identity.
@@ -63,6 +104,16 @@ async function requireAuthenticatedUser(req, res, next) {
      * by the browser as proof of identity.
      */
     req.user = data.user;
+
+    /*
+     * Downstream routes receive the authenticated user's database authority
+     * and organization scope. They do not receive service-role authority.
+     */
+    req.supabase =
+      userSupabase;
+
+    req.organizationId =
+      memberships[0].organization_id;
 
     next();
 
