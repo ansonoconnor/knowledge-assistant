@@ -1,0 +1,59 @@
+name: Authorization regression
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: authorization-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-authorization:
+    name: Verify organizational isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        run: npm ci --prefix server
+
+      - name: Install client dependencies
+        run: npm ci --prefix client
+
+      - name: Verify organizational authorization
+        run: npm run test:authorization
+
+      - name: Build client
+        run: npm --prefix client run build
+
+      - name: Stop local Supabase services
+        if: always()
+        run: supabase stop --no-backup || true

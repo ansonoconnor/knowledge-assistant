@@ -686,9 +686,11 @@ This keeps retrieval, evidence construction, and source eligibility under applic
 
 # Authorization Validation
 
-The authorization model has been exercised against a disposable Supabase environment containing two organizations, two authenticated users, and distinct knowledge for each organization.
+Organizational isolation is encoded as a repeatable integration test suite rather than relying on a one-time manual demonstration.
 
-The tested isolation matrix was:
+The test runner starts a disposable local Supabase environment, resets its database, installs a minimal pre-authorization schema, and then applies the production authorization migrations. It creates two organizations, authenticated users with distinct memberships, and organization-specific knowledge.
+
+The verified isolation matrix is:
 
 ```text
 User A → Organization A     ALLOW
@@ -698,17 +700,30 @@ User B → Organization B     ALLOW
 User B → Organization A     DENY
 ```
 
-Validation covered:
+The suite verifies:
 
-* Organization membership
-* Ingestion provenance
-* Cross-organization insertion denial
-* Document isolation
-* Vector retrieval isolation
-* Evidence isolation
-* Prompt-context isolation
+* Anonymous requests are denied
+* Authenticated users without membership are denied
+* Authorized insertion preserves organization provenance
+* Cross-organization insertion is denied
+* Document rows remain organization-scoped
+* Vector retrieval excludes unauthorized chunks
+* Unauthorized chunks cannot enter evidence
+* Unauthorized chunks cannot enter model context
+* The question endpoint accepts POST bodies and rejects the legacy GET transport
+* Correlated structured logs omit questions, tokens, evidence content, and document content
 
-The authorization property was tested beyond the visible UI because filtering document navigation alone would not protect a RAG system if unauthorized chunks remained eligible for semantic retrieval.
+Model calls use a deterministic test double that exposes the exact messages prepared for the model. This verifies prompt-context isolation without making an external API request.
+
+Run the complete authorization suite with Docker running:
+
+```bash
+npm run test:authorization
+```
+
+GitHub Actions runs the same command for pull requests and pushes to `master`, followed by a production client build. The workflow uses generated local Supabase credentials and does not require repository secrets.
+
+Testing extends beyond visible interface filtering because hiding another organization's documents would not protect a RAG system if its chunks remained eligible for retrieval, evidence assembly, or model context.
 
 ---
 
