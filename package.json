@@ -2,5 +2,8 @@
   "dependencies": {
     "multer": "^2.2.0",
     "pdf-parse": "^2.4.5"
+  },
+  "scripts": {
+    "test:authorization": "bash scripts/test-authorization.sh"
   }
 }
