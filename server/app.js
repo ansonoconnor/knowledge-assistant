@@ -3,11 +3,21 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
+const {
+  establishRequestContext
+} = require(
+  "./middleware/requestContext"
+);
+
 const askRoute = require("./routes/ask");
 const pdfRoute = require("./routes/pdf");
 const documentsRoute = require("./routes/documents");
 
 const app = express();
+
+app.use(
+  establishRequestContext
+);
 
 app.use(cors());
 app.use(express.json());

@@ -296,6 +296,9 @@ async function startApplication({
       if (response.ok) {
         return {
           baseUrl,
+          getOutput() {
+            return output;
+          },
           async stop() {
             if (processHandle.exitCode !== null) {
               return;

@@ -204,14 +204,20 @@ function App() {
 
     try {
       const response = await fetch(
-        `${API_BASE}/ask?question=${encodeURIComponent(
-          question
-        )}`,
+        `${API_BASE}/ask`,
         {
-          headers:
-            buildAuthorizationHeaders(
+          method: "POST",
+          headers: {
+            ...buildAuthorizationHeaders(
               session.access_token
-            )
+            ),
+            "Content-Type":
+              "application/json"
+          },
+          body:
+            JSON.stringify({
+              question
+            })
         }
       );
 

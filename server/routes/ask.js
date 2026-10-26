@@ -1,35 +1,78 @@
-const express = require("express");
-const router = express.Router();
+const express =
+  require("express");
 
-const openai = require("../clients/openai");
+const router =
+  express.Router();
+
+const openai =
+  require("../clients/openai");
 
 const {
   requireAuthenticatedUser
-} = require("../middleware/authenticate");
+} = require(
+  "../middleware/authenticate"
+);
 
 const {
   searchKnowledge
-} = require("../services/retrievalService");
+} = require(
+  "../services/retrievalService"
+);
 
 const {
   buildEvidenceSet
-} = require("../services/evidenceService");
+} = require(
+  "../services/evidenceService"
+);
 
 const {
   buildPrompt
-} = require("../prompts/promptAssembler");
+} = require(
+  "../prompts/promptAssembler"
+);
 
-router.get(
+const {
+  info,
+  error: logError
+} = require(
+  "../utils/logger"
+);
+
+router.post(
   "/",
   requireAuthenticatedUser,
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
     try {
-      const question = req.query.question;
+      const question =
+        typeof req.body?.question ===
+        "string"
+          ? req.body.question.trim()
+          : "";
 
       if (!question) {
+        info(
+          "knowledge_request.denied",
+          {
+            requestId:
+              req.requestId,
+            userId:
+              req.user.id,
+            organizationId:
+              req.organizationId,
+            reason:
+              "question_required",
+            statusCode:
+              400
+          }
+        );
+
         return res.status(400).json({
           success: false,
-          error: "Question parameter required"
+          error:
+            "Question required"
         });
       }
 
@@ -40,21 +83,77 @@ router.get(
           question
         );
 
-      const evidence = buildEvidenceSet(question, matches);
-
-      const messages = buildPrompt(
-        evidence.context,
-        question
+      info(
+        "retrieval.completed",
+        {
+          requestId:
+            req.requestId,
+          userId:
+            req.user.id,
+          organizationId:
+            req.organizationId,
+          retrievedChunks:
+            matches.length
+        }
       );
 
+      const evidence =
+        buildEvidenceSet(
+          question,
+          matches
+        );
+
+      info(
+        "evidence.assembled",
+        {
+          requestId:
+            req.requestId,
+          userId:
+            req.user.id,
+          organizationId:
+            req.organizationId,
+          retrievedChunks:
+            evidence.summary
+              .retrievedChunks,
+          uniqueDocuments:
+            evidence.summary
+              .uniqueDocuments
+        }
+      );
+
+      const messages =
+        buildPrompt(
+          evidence.context,
+          question
+        );
+
       const completion =
-        await openai.chat.completions.create({
-          model: "gpt-4.1-mini",
-          messages
-        });
+        await openai
+          .chat
+          .completions
+          .create({
+            model:
+              "gpt-4.1-mini",
+            messages
+          });
 
       const answer =
-        completion.choices[0].message.content;
+        completion
+          .choices[0]
+          .message
+          .content;
+
+      info(
+        "knowledge_request.completed",
+        {
+          requestId:
+            req.requestId,
+          userId:
+            req.user.id,
+          organizationId:
+            req.organizationId
+        }
+      );
 
       res.json({
         success: true,
@@ -64,11 +163,25 @@ router.get(
       });
 
     } catch (error) {
-      console.error("ASK ERROR:", error);
+      logError(
+        "knowledge_request.failed",
+        error,
+        {
+          requestId:
+            req.requestId,
+          userId:
+            req.user?.id ||
+            null,
+          organizationId:
+            req.organizationId ||
+            null
+        }
+      );
 
       res.status(500).json({
         success: false,
-        error: "Unable to process the knowledge request"
+        error:
+          "Unable to process the knowledge request"
       });
     }
   }
