@@ -4,6 +4,7 @@
     "pdf-parse": "^2.4.5"
   },
   "scripts": {
-    "test:authorization": "bash scripts/test-authorization.sh"
+    "test:integration": "bash scripts/test-integration.sh",
+    "test:authorization": "npm run test:integration"
   }
 }

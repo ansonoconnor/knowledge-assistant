@@ -1,4 +1,4 @@
-name: Authorization regression
+name: System regression
 
 on:
   pull_request:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   verify-authorization:
-    name: Verify organizational isolation
+    name: Verify authorization and ingestion recovery
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -48,8 +48,8 @@ jobs:
       - name: Install client dependencies
         run: npm ci --prefix client
 
-      - name: Verify organizational authorization
-        run: npm run test:authorization
+      - name: Verify system invariants
+        run: npm run test:integration
 
       - name: Build client
         run: npm --prefix client run build

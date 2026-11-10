@@ -10,10 +10,9 @@
  * before the route uses the request-scoped Supabase client. PostgreSQL RLS
  * and the explicit organization predicate constrain the returned knowledge.
  *
- * Notes:
- * Chunks belonging to the same source PDF are grouped into a single logical
- * enterprise document by removing the " - Part X" suffix generated during
- * indexing.
+ * Availability:
+ * Only chunks belonging to a database-verified complete document are exposed
+ * through the organizational document library.
  ******************************************************************************/
 
 const express = require("express");
@@ -34,14 +33,6 @@ const {
 const router = express.Router();
 
 /******************************************************************************
- * Helpers
- ******************************************************************************/
-
-function normalizeDocumentTitle(title = "") {
-  return title.replace(/\s+-\s+Part\s+\d+$/i, "").trim();
-}
-
-/******************************************************************************
  * Routes
  ******************************************************************************/
 
@@ -54,14 +45,35 @@ router.get(
         await req.supabase
         .from("knowledge_chunks")
         .select(
-          "id, title, chunk_text"
+            `
+              id,
+              title,
+              chunk_text,
+              chunk_index,
+              document_id,
+              document:knowledge_documents!inner(
+                id,
+                source_name,
+                status
+              )
+            `
         )
         .eq(
           "organization_id",
           req.organizationId
         )
-        .order("title", { ascending: true })
-        .order("id", { ascending: true });
+          .eq(
+            "document.status",
+            "complete"
+          )
+          .order(
+            "document_id",
+            { ascending: true }
+          )
+          .order(
+            "chunk_index",
+            { ascending: true }
+          );
 
       if (error) {
         throw error;
@@ -70,16 +82,21 @@ router.get(
       const groupedDocuments = {};
 
       data.forEach((row) => {
-        const documentTitle = normalizeDocumentTitle(row.title);
+        const documentId =
+          row.document_id;
 
-        if (!groupedDocuments[documentTitle]) {
-          groupedDocuments[documentTitle] = {
+        const documentTitle =
+          row.document.source_name;
+
+        if (!groupedDocuments[documentId]) {
+          groupedDocuments[documentId] = {
+            id: documentId,
             title: documentTitle,
             chunks: []
           };
         }
 
-        groupedDocuments[documentTitle].chunks.push(row);
+        groupedDocuments[documentId].chunks.push(row);
       });
 
       const documents = Object.values(groupedDocuments).map((document) => {
@@ -94,6 +111,7 @@ router.get(
         });
 
         return {
+          id: document.id,
           title: document.title,
 
           chunks: document.chunks.length,

@@ -61,18 +61,21 @@ echo "Applying authorization test baseline"
 apply_sql_file \
   tests/integration/fixtures/authorization_baseline.sql
 
-echo "Applying production authorization migrations"
+echo "Applying production migrations"
 apply_sql_file \
   database/migrations/001_introduce_organization_scoped_knowledge.sql
 
 apply_sql_file \
   database/migrations/002_scope_knowledge_retrieval.sql
 
+apply_sql_file \
+  database/migrations/003_make_pdf_ingestion_recoverable.sql
+
 set -a
 eval "$(supabase status -o env 2>/dev/null)"
 set +a
 
-echo "Running authorization integration tests"
+echo "Running system integration tests"
 node \
   --test \
   --test-concurrency=1 \
