@@ -184,6 +184,52 @@ test(
     const titleB =
       `INSERT_B_SENTINEL_${fixture.runId}`;
 
+    async function beginDocument(
+      client,
+      organizationId,
+      title
+    ) {
+      const {
+        data,
+        error
+      } = await client
+        .rpc(
+          "begin_knowledge_ingestion",
+          {
+            target_organization_id:
+              organizationId,
+            target_source_name:
+              `${title}.pdf`,
+            target_source_hash:
+              title,
+            target_expected_chunk_count: 1
+          }
+        )
+        .single();
+
+      assert.equal(
+        error,
+        null,
+        error?.message
+      );
+
+      return data.document_id;
+    }
+
+    const documentA =
+      await beginDocument(
+        fixture.users.a.client,
+        fixture.organizations.a,
+        titleA
+      );
+
+    const documentB =
+      await beginDocument(
+        fixture.users.b.client,
+        fixture.organizations.b,
+        titleB
+      );
+
     const {
       data: insertedA,
       error: errorA
@@ -194,7 +240,10 @@ test(
         chunk_text:
           "Inserted by User A",
         organization_id:
-          fixture.organizations.a
+          fixture.organizations.a,
+        document_id:
+          documentA,
+        chunk_index: 0
       })
       .select(
         "title, organization_id"
@@ -211,7 +260,10 @@ test(
         chunk_text:
           "Inserted by User B",
         organization_id:
-          fixture.organizations.b
+          fixture.organizations.b,
+        document_id:
+          documentB,
+        chunk_index: 0
       })
       .select(
         "title, organization_id"
@@ -247,6 +299,17 @@ test(
           fixture.organizations.b
       }
     );
+
+    await fixture.admin
+      .from("knowledge_documents")
+      .delete()
+      .in(
+        "id",
+        [
+          documentA,
+          documentB
+        ]
+      );
   }
 );
 
@@ -259,6 +322,52 @@ test(
     const titleB =
       `CROSS_B_TO_A_${fixture.runId}`;
 
+    async function beginDocument(
+      client,
+      organizationId,
+      title
+    ) {
+      const {
+        data,
+        error
+      } = await client
+        .rpc(
+          "begin_knowledge_ingestion",
+          {
+            target_organization_id:
+              organizationId,
+            target_source_name:
+              `${title}.pdf`,
+            target_source_hash:
+              title,
+            target_expected_chunk_count: 1
+          }
+        )
+        .single();
+
+      assert.equal(
+        error,
+        null,
+        error?.message
+      );
+
+      return data.document_id;
+    }
+
+    const documentA =
+      await beginDocument(
+        fixture.users.a.client,
+        fixture.organizations.a,
+        titleA
+      );
+
+    const documentB =
+      await beginDocument(
+        fixture.users.b.client,
+        fixture.organizations.b,
+        titleB
+      );
+
     const {
       error: errorA
     } = await fixture.users.a.client
@@ -268,7 +377,10 @@ test(
         chunk_text:
           "User A attempted Organization B insertion",
         organization_id:
-          fixture.organizations.b
+          fixture.organizations.b,
+        document_id:
+          documentB,
+        chunk_index: 0
       });
 
     const {
@@ -280,7 +392,10 @@ test(
         chunk_text:
           "User B attempted Organization A insertion",
         organization_id:
-          fixture.organizations.a
+          fixture.organizations.a,
+        document_id:
+          documentA,
+        chunk_index: 0
       });
 
     assert.notEqual(errorA, null);
@@ -307,5 +422,16 @@ test(
     );
 
     assert.deepEqual(data, []);
+
+    await fixture.admin
+      .from("knowledge_documents")
+      .delete()
+      .in(
+        "id",
+        [
+          documentA,
+          documentB
+        ]
+      );
   }
 );

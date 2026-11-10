@@ -226,19 +226,30 @@ Request-Scoped Supabase Client
 PDF Upload
       │
       ▼
+SHA-256 Source Identity
+      │
+      ▼
+Durable Document
+status = processing
+      │
+      ▼
 Text Extraction
       │
       ▼
 Chunk Generation
       │
       ▼
-Embedding Generation
+Stable Chunk Positions
+(document_id, chunk_index)
       │
       ▼
-Chunks + organization_id
+Embedding + Idempotent Insert
       │
       ▼
-PostgreSQL + RLS + pgvector
+Database Chunk-Set Verification
+      │
+      ▼
+status = complete
       │
       ▼
 Authorized Searchable Knowledge
@@ -616,6 +627,7 @@ Express API
             │
             ├── organizations
             ├── organization_memberships
+            ├── knowledge_documents
             └── knowledge_chunks
 ```
 
@@ -624,7 +636,8 @@ Backend responsibilities include:
 * Authentication validation
 * Membership resolution
 * Organization-scope propagation
-* PDF ingestion
+* Recoverable PDF ingestion
+* Durable ingestion lifecycle management
 * Embedding generation
 * Semantic retrieval
 * Metadata extraction
@@ -721,9 +734,39 @@ Run the complete authorization suite with Docker running:
 npm run test:authorization
 ```
 
+The complete authorization and ingestion-recovery suite runs with:
+
+```bash
+npm run test:integration
+```
+
 GitHub Actions runs the same command for pull requests and pushes to `master`, followed by a production client build. The workflow uses generated local Supabase credentials and does not require repository secrets.
 
 Testing extends beyond visible interface filtering because hiding another organization's documents would not protect a RAG system if its chunks remained eligible for retrieval, evidence assembly, or model context.
+
+---
+
+# Recoverable PDF Ingestion
+
+PDF ingestion is modeled as a durable lifecycle rather than a sequence of unrelated chunk inserts.
+
+Each source PDF receives an organization-scoped SHA-256 identity and a `knowledge_documents` record with `processing`, `failed`, or `complete` status. Chunks use stable `(document_id, chunk_index)` identities, allowing a retry to reuse completed positions without creating duplicates.
+
+Completion is controlled by a database function that verifies the persisted chunk count and contiguous chunk positions against the document's expected count. Browsing and vector retrieval join against documents in `complete` status, so persisted partial work cannot become evidence or model context.
+
+The integration suite deliberately interrupts ingestion after two chunks and verifies that:
+
+* The durable document is marked `failed`
+* Partial chunks remain identifiable by stable position
+* The failed document is excluded from browsing and retrieval
+* Direct lifecycle mutation and cross-organization recovery are denied
+* Retrying the same PDF reuses its document and existing chunks
+* Completion occurs only after the exact expected chunk set exists
+* Retrying a completed document is a stable no-op
+
+This implements the governing reliability rule:
+
+> **Persisted does not mean available.**
 
 ---
 
@@ -815,6 +858,9 @@ Current capabilities include:
 * Evidence isolation
 * Prompt-context isolation
 * Cross-organization authorization validation
+* Durable PDF identity and explicit ingestion lifecycle
+* Idempotent chunk persistence and safe retry
+* Fault-injection recovery verification
 
 The project continues to evolve as additional enterprise knowledge, retrieval, workflow, and implementation problems are explored.
 

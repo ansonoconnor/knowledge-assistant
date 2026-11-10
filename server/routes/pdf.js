@@ -17,6 +17,7 @@
 
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 const pdf = require("pdf-parse");
 const express = require("express");
 const multer = require("multer");
@@ -151,6 +152,12 @@ router.post(
           req.file.path
         );
 
+      const sourceHash =
+        crypto
+          .createHash("sha256")
+          .update(dataBuffer)
+          .digest("hex");
+
       const pdfData =
         await pdf(dataBuffer);
 
@@ -182,31 +189,28 @@ router.post(
         );
       }
 
-      const results = [];
-
-      for (
-        let i = 0;
-        i < chunks.length;
-        i++
-      ) {
-        const result =
-          await ingestDocument(
-            req.supabase,
-            req.organizationId,
-            `${req.file.originalname} - Part ${i + 1}`,
-            chunks[i]
-          );
-
-        results.push(result);
-      }
+      const result =
+        await ingestDocument(
+          req.supabase,
+          {
+            organizationId:
+              req.organizationId,
+            sourceName:
+              req.file.originalname,
+            sourceHash,
+            chunks
+          }
+        );
 
       res.json({
         success: true,
         filename:
           req.file.originalname,
         chunksCreated:
-          results.length,
-        documents: results
+          result.chunksProcessed,
+        chunksAvailable:
+          result.persistedChunkCount,
+        document: result
       });
 
     } catch (error) {

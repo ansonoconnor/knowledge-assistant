@@ -141,6 +141,67 @@ async function createAuthorizationFixture({
     );
   }
 
+  const documentHashes = {
+    a: `${prefix}_A_DOCUMENT_${runId}`,
+    b: `${prefix}_B_DOCUMENT_${runId}`
+  };
+
+  const {
+    data: documentRows,
+    error: documentError
+  } = await admin
+    .from("knowledge_documents")
+    .insert([
+      {
+        organization_id:
+          organizations.a,
+        source_name:
+          `${titles.a}.pdf`,
+        source_hash:
+          documentHashes.a,
+        status: "complete",
+        expected_chunk_count: 1,
+        persisted_chunk_count: 1,
+        completed_at:
+          new Date().toISOString()
+      },
+      {
+        organization_id:
+          organizations.b,
+        source_name:
+          `${titles.b}.pdf`,
+        source_hash:
+          documentHashes.b,
+        status: "complete",
+        expected_chunk_count: 1,
+        persisted_chunk_count: 1,
+        completed_at:
+          new Date().toISOString()
+      }
+    ])
+    .select(
+      "id, organization_id"
+    );
+
+  assert.equal(
+    documentError,
+    null,
+    documentError?.message
+  );
+
+  const documents = {
+    a: documentRows.find(
+      (row) =>
+        row.organization_id ===
+        organizations.a
+    ),
+    b: documentRows.find(
+      (row) =>
+        row.organization_id ===
+        organizations.b
+    )
+  };
+
   const {
     error: chunkError
   } = await admin
@@ -150,12 +211,16 @@ async function createAuthorizationFixture({
         title: titles.a,
         chunk_text: knowledge.a,
         organization_id: organizations.a,
+        document_id: documents.a.id,
+        chunk_index: 0,
         embedding: embeddings.a
       },
       {
         title: titles.b,
         chunk_text: knowledge.b,
         organization_id: organizations.b,
+        document_id: documents.b.id,
+        chunk_index: 0,
         embedding: embeddings.b
       }
     ]);
@@ -192,12 +257,13 @@ async function createAuthorizationFixture({
 
   async function cleanup() {
     await admin
-      .from("knowledge_chunks")
+      .from("knowledge_documents")
       .delete()
-      .or(
-        `title.in.(${Object.values(titles).join(",")}),` +
-        `title.like.INSERT_%_${runId},` +
-        `title.like.CROSS_%_${runId}`
+      .in(
+        "id",
+        Object.values(documents).map(
+          (document) => document.id
+        )
       );
 
     for (const user of Object.values(users)) {
@@ -214,6 +280,7 @@ async function createAuthorizationFixture({
     titles,
     knowledge,
     embeddings,
+    documents,
     organizations,
     retrieve,
     cleanup
