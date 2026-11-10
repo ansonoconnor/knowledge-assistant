@@ -247,6 +247,30 @@ test(
       failedDocument.id
     );
 
+    const {
+      data: userVisiblePartialChunks,
+      error: partialChunkReadError
+    } = await fixture.users.a.client
+      .from("knowledge_chunks")
+      .select(
+        "id, document_id, chunk_index"
+      )
+      .eq(
+        "document_id",
+        failedDocument.id
+      );
+
+    assert.equal(
+      partialChunkReadError,
+      null,
+      partialChunkReadError?.message
+    );
+
+    assert.deepEqual(
+      userVisiblePartialChunks,
+      []
+    );
+
     const libraryWhileFailed =
       await getDocumentLibrary(
         fixture.users.a.accessToken

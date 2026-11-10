@@ -202,7 +202,10 @@ using (
       and membership.user_id = (select auth.uid())
       and (
         document.status = 'complete'
-        or document.processing_user_id = (select auth.uid())
+        or (
+          document.status = 'processing'
+          and document.processing_user_id = (select auth.uid())
+        )
       )
   )
 );
